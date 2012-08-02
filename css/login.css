@@ -1,0 +1,140 @@
+#login_form, #register_form, #register_message {
+    width: 350px;
+    background: #f0f0f0 url(../img/login/login_bg.jpg) repeat-x 0 0;
+    border: 1px solid white;
+    margin: 150px auto 0;
+    padding: 1em;
+    -moz-border-radius: 3px;
+}
+
+#cp {
+    width: 650px;
+    background: #f4f4f4 url(../img/login/login_bg.jpg) repeat-x 0 0;
+    border: 1px solid white;
+    margin: 150px auto 0;
+    padding: 1em;
+    -moz-border-radius: 3px;
+}
+
+#dashboard{
+    width: 850px;
+    background: #f0f0f0 url(../img/login/login_bg.jpg) repeat-x 0 0;
+    border: 1px solid white;
+    margin: 150px auto 0;
+    padding: 1em;
+    -moz-border-radius: 3px;
+}
+
+#cp a {
+    border: none;
+    margin-right: 1em;
+    padding: 6px;
+    text-decoration: none;
+    font-size: 12px;
+    -moz-border-radius: 4px;
+    background: #665f65;
+    color: white;
+    box-shadow: 0 1px 0 white;
+    -moz-box-shadow: 0 1px 0 white;
+    -webkit-box-shadow: 0 1px 0 white;
+
+}
+
+.message
+{
+    width: 500px;
+    background: #505050 url(../img/login/login_bg.jpg) repeat-x 0 0;
+    border: 1px solid black;
+    margin: 10px auto 0;
+    padding: 1em;
+    -moz-border-radius: 3px;
+}
+
+.message a
+{
+    border: none;
+    margin-right: 1em;
+    padding: 6px;
+    text-decoration: none;
+    font-size: 12px;
+    background: #665f65;
+    color: white;
+}
+
+.unread h1,h2,h3
+{
+    font-weight = bolder;
+}
+
+.unread a
+{
+    border: none;
+    margin-right: 1em;
+    padding: 6px;
+    text-decoration: none;
+    font-size: 12px;
+    background: #9f1c63;
+    color: white;
+    box-shadow: 0 1px 0 white;
+    -moz-box-shadow: 0 1px 0 white;
+    -webkit-box-shadow: 0 1px 0 white;
+}
+
+
+
+input[type=text], input[type=password] {
+    display: block;
+    margin: 0 0 1em 0;
+    width: 280px;
+    border: 5px;
+    -moz-border-radius: 1px;
+    -webkit-border-radius: 1px;
+    padding: 1em;
+}
+
+input[type=submit], form a {
+    border: none;
+    margin-right: 1em;
+    padding: 6px;
+    text-decoration: none;
+    font-size: 12px;
+    -moz-border-radius: 4px;
+    background: #348075;
+    color: white;
+    box-shadow: 0 1px 0 white;
+    -moz-box-shadow: 0 1px 0 white;
+    -webkit-box-shadow: 0 1px 0 white;
+
+}
+
+input[type=submit]:hover, form a:hover {
+    background: #287368;
+    cursor: pointer;
+}
+/* Validation error messages */
+
+.error {
+    border: none;
+    margin-right: 1em;
+    padding: 6px;
+    text-decoration: none;
+    font-size: 12px;
+    -moz-border-radius: 4px;
+    background: #F80000;
+    color: white;
+    box-shadow: 0 1px 0 white;
+    -moz-box-shadow: 0 1px 0 white;
+    -webkit-box-shadow: 0 1px 0 white;
+}
+
+fieldset {
+    width: 300px;
+    margin: auto;
+    margin-bottom: 2em;
+    display: block;
+}
+
+.right
+{
+    float: right;
+}

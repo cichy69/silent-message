@@ -1,0 +1,18 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+APPPATH	index.php	/^		define('APPPATH', $application_folder.'\/');$/;"	d
+APPPATH	index.php	/^		define('APPPATH', BASEPATH.$application_folder.'\/');$/;"	d
+BASEPATH	index.php	/^	define('BASEPATH', str_replace("\\\\", "\/", $system_path));$/;"	d
+ENVIRONMENT	index.php	/^	define('ENVIRONMENT', 'development');$/;"	d
+EXT	index.php	/^	define('EXT', '.php');$/;"	d
+FCPATH	index.php	/^	define('FCPATH', str_replace(SELF, '', __FILE__));$/;"	d
+SELF	index.php	/^	define('SELF', pathinfo(__FILE__, PATHINFO_BASENAME));$/;"	d
+SYSDIR	index.php	/^	define('SYSDIR', trim(strrchr(trim(BASEPATH, '\/'), '\/'), '\/'));$/;"	d
+application_folder	index.php	/^	$application_folder = 'application';$/;"	v
+system_path	index.php	/^		$system_path = realpath($system_path).'\/';$/;"	v
+system_path	index.php	/^	$system_path = 'system';$/;"	v
+system_path	index.php	/^	$system_path = rtrim($system_path, '\/').'\/';$/;"	v

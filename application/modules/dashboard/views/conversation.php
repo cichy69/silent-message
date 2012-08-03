@@ -12,7 +12,7 @@ $message = array(
 <?php echo Modules::run('dashboard/dashboard/cp'); ?>
 
 <div id="dashboard">
-    <h2>Conversation: <?php echo $subject['conversation_subject'];?> </h2>
+    <h2>Conversation: <?php echo trim(html_entity_decode($subject['conversation_subject'], ENT_COMPAT,'UTF-8'),"'");?> </h2>
         <hr/>
     <br/>
 
@@ -34,9 +34,7 @@ $message = array(
             <?php echo $message->username; ?> [<?php echo date('d/m/Y H:i:s', $message->message_date); ?>]:
         </span>
         <br/><br/>
-        <span class="text">
-            <?php echo trim($message->message_text,"'"); ?><br/>
-        </span>
+          <?php echo trim(html_entity_decode($message->message_text, ENT_COMPAT,'UTF-8'),"'"); ?><br/>
         <br/><br/>
     </div>
     <?php endforeach;?>

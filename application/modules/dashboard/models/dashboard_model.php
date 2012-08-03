@@ -478,14 +478,14 @@ class Dashboard_model extends CI_Model {
     {
         $this->load->helper('date');
 
-        $this->db->escape(htmlentities($subject));
-        $this->db->escape(htmlentities($text));
+        $safe_subject = $this->db->escape(htmlentities($subject,ENT_COMPAT,'UTF-8'));
+        $safe_text    = $this->db->escape(htmlentities($text,ENT_COMPAT,'UTF-8'));
 
         $this->db->trans_start(); //transaction start
 
             //create entry in conversations table
             $data = array(
-                           'conversation_subject' => $subject
+                           'conversation_subject' => $safe_subject
                          );
             $this->db->insert('conversations', $data);
 
@@ -497,7 +497,7 @@ class Dashboard_model extends CI_Model {
                             'conversation_id' => $conversation_id,
                             'user_id'         => $this->session->userdata('user_id'),
                             'message_date'    => now(),
-                            'message_text'    => $text
+                            'message_text'    => $safe_text
                           );
             $this->db->insert('conversations_messages', $data2);
 
@@ -547,7 +547,7 @@ class Dashboard_model extends CI_Model {
     {
         $this->load->helper('date');
 
-        $safe_message = $this->db->escape(htmlentities($message));
+        $safe_message = $this->db->escape(htmlentities($message,ENT_COMPAT,'UTF-8'));
 
         $data = array(
                         'conversation_id' => $safe_id,

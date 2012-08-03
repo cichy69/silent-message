@@ -13,7 +13,7 @@
     <div class="message <?php if($message->conversation_undread == 1) echo "unread";?>">
     <h2>
     <a href="/dashboard/delete/<?php echo $message->conversation_id;?>">[DELETE]</a>
-    <a href="/dashboard/show_message/<?php echo $message->conversation_id;?>">[READ] <?php echo $message->conversation_subject;?></a>
+    <a href="/dashboard/show_message/<?php echo $message->conversation_id;?>">[READ] <?php echo trim(html_entity_decode($message->conversation_subject,ENT_COMPAT,'UTF-8'),"'");?></a>
     </h2>
             <p>Last reply: <?php echo date('d/m/Y H:i:s',$message->conversation_last_reply)?>
             <p></p>

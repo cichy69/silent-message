@@ -17,6 +17,7 @@ $lang['auth_captcha_expired']             = 'Your confirmation code has expired.
 
 // Notifications
 
+$lang['wrong_id']                              = 'Wrong message ID, sorry.';
 $lang['del_success']                           = 'Your message has been deleted.';
 $lang['del_failed']                            = 'Your message can not be deleted.';
 $lang['new_message_send']                      = 'Your message has been send.';

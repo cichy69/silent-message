@@ -16,11 +16,26 @@
     -moz-border-radius: 3px;
 }
 
+#reply {
+
+    width: 650px;
+    height: auto;
+    background: #3df474 url(../img/login/login_bg.jpg) repeat-x 0 0;
+    border: 1px solid white;
+    margin: auto auto;
+    padding: 0.5em;
+    -moz-border-radius: 3px;
+    box-shadow: 0 1px 0 white;
+    -moz-box-shadow: 0 1px 0 white;
+    -webkit-box-shadow: 0 1px 0 white;
+
+
+}
 #dashboard{
     width: 850px;
     background: #f0f0f0 url(../img/login/login_bg.jpg) repeat-x 0 0;
     border: 1px solid white;
-    margin: 150px auto 0;
+    margin: 50px auto 0;
     padding: 1em;
     -moz-border-radius: 3px;
 }
@@ -47,6 +62,9 @@
     border: 1px solid black;
     margin: 10px auto 0;
     padding: 1em;
+    box-shadow: 0 1px 0 white;
+    -moz-box-shadow: 0 1px 0 white;
+    -webkit-box-shadow: 0 1px 0 white;
     -moz-border-radius: 3px;
 }
 
@@ -80,6 +98,51 @@
     -webkit-box-shadow: 0 1px 0 white;
 }
 
+.conversation
+{
+    width: 750px;
+    height: auto;
+    background: #f0f0f0 url(../img/login/login_bg.jpg) repeat-x 0 0;
+    border: 1px solid white;
+    margin:  auto;
+    padding: 1em;
+    -moz-border-radius: 4px;
+    box-shadow: 0 1px 0 white;
+    -moz-box-shadow: 0 1px 0 white;
+    -webkit-box-shadow: 0 1px 0 white;
+}
+
+.users_info
+{
+    width: 550px;
+    height: auto;
+    background: #334455 url(../img/login/login_bg.jpg) repeat-x 0 0;
+    border: 1px solid white;
+    margin:  auto;
+    padding: 4em;
+    color: #dd2714;
+    -moz-border-radius: 4px;
+    box-shadow: 0 1px 0 white;
+    -moz-box-shadow: 0 1px 0 white;
+    -webkit-box-shadow: 0 1px 0 white;
+}
+.conversation .unread
+{
+    font-weight: bolder;
+}
+
+.conversation .info
+{
+    float: left;
+    color: #000;
+}
+
+.conversation .text
+{
+    float: left;
+    color: #030a0c;
+
+}
 
 
 input[type=text], input[type=password] {

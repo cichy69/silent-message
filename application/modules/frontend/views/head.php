@@ -6,8 +6,8 @@
     <meta http-equiv="content-type" content="application/xhtml+xml; charset=UTF-8" />
 
     <title></title>
-    <meta name="description" content="" />
-    <meta name="author" content="" />
+    <meta name="description" content="silent-message system - beta" />
+    <meta name="author" content="Maciej Cichy Świderski" />
 
     <meta name="viewport" content="width=device-width" />
 

@@ -18,6 +18,9 @@ $confirm_new_password = array(
     'size'     => 30,
 );
 ?>
+
+<?php echo Modules::run('dashboard/dashboard/cp'); ?>
+
 <div id="register_form">
 <?php echo form_open($this->uri->uri_string()); ?>
     <?php echo form_label('Old Password', $old_password['id']); ?>

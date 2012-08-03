@@ -33,6 +33,14 @@ $text = array(
 
 <?php echo form_open('/dashboard/new_conversation'); ?>
 
+        <?php if(isset($users) && $users->result()):?>
+        <div class="users_info">
+           Available Users:<br/><br/>
+                <?php foreach($users->result() as $user):?>
+                     <?php echo $user->username;?>,
+                <?php endforeach;?>
+        </div>
+        <?php endif;?>
 
         <?php echo form_label('To:', $to['id']); ?>
         <?php echo form_input($to); ?>

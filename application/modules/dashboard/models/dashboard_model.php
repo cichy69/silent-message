@@ -115,10 +115,108 @@ class Dashboard_model extends CI_Model {
 
     }
 
-    function validate_and_delete($safe_id)
+    function fetch_conversation_subject($safe_id)
     {
-        $this->db->trans_start();
+        $this->db->select('`conversations`.`conversation_subject`');
+        $this->db->from('`conversations`');
+        $this->db->where('`conversations`.`conversation_id`',$safe_id);
+        $this->db->limit(1);
 
+        $result = $this->db->get();
+
+        if ($result->num_rows() > 0)
+        {
+
+            return $result->row_array();
+
+        } else {
+                    return FALSE;
+               }
+
+    }
+
+    function update_last_view($safe_id)
+    {
+        $this->load->helper('date');
+
+        $data = array(
+                       'conversation_last_view' => now()
+                     );
+
+        $this->db->where('conversation_id', $safe_id);
+        $this->db->where('user_id', $this->session->userdata('user_id'));
+        $this->db->update('conversations_members', $data);
+
+    }
+
+    function add_message_to_conversation($safe_id,$message)
+    {
+        $this->load->helper('date');
+
+        $safe_message = $this->db->escape(htmlentities($message));
+
+        $data = array(
+                        'conversation_id' => $safe_id,
+                        'user_id'         => $this->session->userdata('user_id'),
+                        'message_date'    => now(),
+                        'message_text'    => $safe_message
+                     );
+
+        $this->db->insert('conversations_messages', $data);
+
+
+    }
+
+    function get_all_users()
+    {
+        $this->db->select('`users`.`username`');
+        $this->db->from('`users`');
+
+        $result = $this->db->get();
+
+        if ($result->num_rows() > 0)
+        {
+
+            return $result;
+
+        } else {
+                    return NULL;
+               }
+
+    }
+
+    function fetch_conversation_messages($conversation_id)
+    {
+        $this->db->select('`conversations_messages`.`message_date`');
+        $this->db->select('`conversations_messages`.`message_date` > `conversations_members`.`conversation_last_view` AS `message_unread`');
+        $this->db->select('`conversations_messages`.`message_text`');
+        $this->db->select('`users`.`username`');
+
+        $this->db->from('conversations_messages');
+
+        $this->db->join('`users`', 'conversations_messages.user_id = users.id','inner');
+        $this->db->join('`conversations_members`', 'conversations_messages.conversation_id = conversations_members.conversation_id','inner');
+
+        $this->db->where('`conversations_messages`.`conversation_id`', $conversation_id);
+        $this->db->where('`conversations_members`.`user_id`', $this->session->userdata('user_id'));
+
+        $this->db->order_by('`conversations_messages`.`message_date`',"desc");
+
+        $result = $this->db->get();
+
+        if ($result->num_rows() > 0)
+        {
+
+            return $result;
+
+        } else {
+                    return FALSE;
+               }
+
+    }
+
+    function validate_message($safe_id)
+    {
         //check if user is part of given conversation
         $this->db->select('COUNT(1)');
         $this->db->from('`conversations_members`');
@@ -129,6 +227,16 @@ class Dashboard_model extends CI_Model {
         $query = $this->db->get();
 
         if($query->num_rows() == 1)
+        {
+            return TRUE;
+        } return FALSE;
+
+    }
+
+    function validate_and_delete($safe_id)
+    {
+        $this->db->trans_start();
+        if($this->validate_message($safe_id))
         { //user is memeber od conversation
 
             //fetch other users message status, distinct to lower numbers of data in big conversation

@@ -12,6 +12,9 @@ $email = array(
     'size'    => 30,
 );
 ?>
+
+<?php echo Modules::run('dashboard/dashboard/cp'); ?>
+
 <?php echo form_open('dashboard/email_change'); ?>
 <div id="register_form">
 <h1>Change Email</h1>

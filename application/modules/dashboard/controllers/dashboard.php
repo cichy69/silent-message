@@ -6,7 +6,7 @@ class Dashboard extends MX_Controller
     {
         parent::__construct();
 
-        $this->output->enable_profiler(TRUE);
+//        $this->output->enable_profiler(TRUE);
 
        //No direct access, if username is not logged in, redirect to login page
       if (!modules::run('login/is_logged_in')) {                            // not logged in or activated
@@ -23,9 +23,41 @@ class Dashboard extends MX_Controller
         $this->load->model('dashboard/dashboard_model');
     }
 
-    function show_message($safe_id)
+    function show_message($id)
     {
+        $safe_id = (int) $id;
+        $updated = FALSE;
 
+            $this->form_validation->set_rules('message' , 'Message'   , 'trim|required|xss_clean');
+
+            if ($this->form_validation->run())
+            {
+                $this->dashboard_model->add_message_to_conversation($safe_id,$this->form_validation->set_value('message'));
+                $this->dashboard_model->update_last_view($safe_id);
+                $updated = TRUE;
+
+            } else {
+                            $errors = $this->dashboard_model->get_error_message();
+                            foreach ($errors as $k => $v)    $data['errors'][$k] = $this->lang->line($v);
+                   }
+
+
+        $data['subject'] = $this->dashboard_model->fetch_conversation_subject($id);
+
+        if(!$updated) $this->dashboard_model->update_last_view($safe_id);
+
+        if($this->dashboard_model->validate_message($safe_id))
+        {
+
+            $data['conv_messages'] = $this->dashboard_model->fetch_conversation_messages($safe_id);
+
+            $this->load->view('frontend/head');
+            $this->load->view('dashboard/conversation', $data);
+            $this->load->view('frontend/footer');
+
+        } else {
+                    $this->_show_message($this->lang->line('wrong_id'));
+               }
     }
 
     function delete($id)
@@ -167,6 +199,8 @@ class Dashboard extends MX_Controller
                             foreach ($errors as $k => $v)    $data['errors'][$k] = $this->lang->line($v);
                        }
             }
+
+            $data['users'] = $this->dashboard_model->get_all_users();
 
             $this->load->view('frontend/head');
             $this->load->view('dashboard/new_conversation', $data);

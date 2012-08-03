@@ -20,7 +20,7 @@ $confirm_new_password = array(
 <h1>Possword Reset</h1>
 <br/>
 <hr/>
-<?php echo form_open($this->uri->uri_string()); ?>
+<?php echo form_open('login/reset_password'); ?>
         <?php echo form_label('New Password', $new_password['id']); ?>
         <?php echo form_password($new_password); ?>
         <?php echo form_error($new_password['name']); ?>

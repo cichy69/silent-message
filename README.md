@@ -37,7 +37,13 @@ TODO:
 * Full Language file support (90% done).
 * Move CAPTCHA to separated module.
 
+===>SECURITY
+* Cross-site request forgery protection.
+* XSS Global Protection and overall sanitize ... just in case.
+* PhpPass for password hashing (with uniqe, machine depended option).
 
+
+ 
 Kudos to:
 * http://betterphp.co.uk/home.html
 * http://codeigniter.com

@@ -5,7 +5,7 @@
 <head>
     <meta http-equiv="content-type" content="application/xhtml+xml; charset=UTF-8" />
 
-    <title></title>
+    <title>silent-message - beta stage - report issues to m.m.swiderski(at)gmail.com</title>
     <meta name="description" content="silent-message system - beta" />
     <meta name="author" content="Maciej Cichy Świderski" />
 

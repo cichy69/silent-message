@@ -3,6 +3,10 @@
 <div id="dashboard">
     <h2>INBOX</h2>
         <hr/>
+    <a href="/dashboard/inbox/by_date">Sort by date</a> |
+    <a href="/dashboard/inbox/by_topic">Sort by topic</a> |
+    <a href="/dashboard/export" target="_blank">Export Messages</a><br/>
+<hr/>
     <br/>
 <?php if(isset($messages) && $messages != NULL):?>
     <?php foreach($messages->result() as $message):?>

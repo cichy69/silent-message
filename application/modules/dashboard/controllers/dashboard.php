@@ -87,6 +87,31 @@ class Dashboard extends MX_Controller
     }
     /* }}} */
 
+    function export()
+    {
+        $this->load->helper('date');
+        $this->load->library('excel');
+
+        $data = $this->dashboard_model->fetch_user_conversation($this->session->userdata('user_id'),"by_date");
+
+        //print_r($data->result_array());
+
+         $titles = array(
+                            'Conversation Subject', 'Last Message Date'
+                         );
+
+        $array = array();
+
+        foreach($data->result_array() as $row)
+        {
+            $array[] = array($row['conversation_subject'], date("d/m/Y H:i:s",$row['conversation_last_reply']));
+        }
+
+        $this->excel->filename = $this->session->userdata('username').".".date("d/m/Y-H:i:s",now());
+        $this->excel->make_from_array($titles, $array);
+        //     $this->excel->make_from_db($data);
+    }
+
     /* public inbox() {{{ */
     /**
      * Show inbox to logged user
@@ -94,9 +119,11 @@ class Dashboard extends MX_Controller
      * @access public
      * @return void
      */
-    function inbox()
+    function inbox($sort_type="by_date")
     {
-        $data['messages'] = $this->dashboard_model->fetch_user_conversation($this->session->userdata('user_id'));
+        $sort = $this->security->xss_clean($sort_type);
+
+        $data['messages'] = $this->dashboard_model->fetch_user_conversation($this->session->userdata('user_id'),$sort);
 
         $this->load->view('frontend/head');
         $this->load->view('dashboard/inbox',$data);

@@ -300,7 +300,7 @@ class Dashboard_model extends CI_Model {
 
     }
 
-    function fetch_user_conversation($user_id)
+    function fetch_user_conversation($user_id,$sort)
     {
         $this->db->select('`conversations`.`conversation_id`');
         $this->db->select('`conversations`.`conversation_subject`');
@@ -317,7 +317,18 @@ class Dashboard_model extends CI_Model {
 
         $this->db->group_by('`conversations`.`conversation_id`');
 
-        $this->db->order_by('`conversation_last_reply`',"desc");
+        if($sort === "by_date")
+        {
+            $this->db->order_by('`conversation_last_reply`',"desc");
+
+              } elseif ($sort === "by_topic")
+                    {
+
+                        $this->db->order_by('`conversation_subject`',"desc");
+
+                    } else {
+                                $this->db->order_by('`conversation_last_reply`',"desc");
+                           }
 
         $query = $this->db->get();
 

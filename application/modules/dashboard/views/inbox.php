@@ -16,7 +16,7 @@
     <a href="/dashboard/show_message/<?php echo $message->conversation_id;?>">[READ] <?php echo $message->conversation_subject;?></a>
     </h2>
             <p>Last reply: <?php echo date('d/m/Y H:i:s',$message->conversation_last_reply)?>
-
+            <p></p>
         </div>
     <?php endforeach;?>
 <?php else:?>

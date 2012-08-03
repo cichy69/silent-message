@@ -66,7 +66,7 @@ class Dashboard_model extends CI_Model {
 
     /* public change_password_do($user_id, $new_pass) {{{ */
     /**
-     * Change user password
+     * Database related part of changing password method.
      *
      * @param mixed $user_id
      * @param mixed $new_pass
@@ -83,329 +83,9 @@ class Dashboard_model extends CI_Model {
     }
     /* }}} */
 
-    function fetch_ids($recipments)
-    {
-        $this->load->helper('security');
-
-        foreach($recipments as &$recipment)
-        {
-            $this->db->escape($recipment);
-        }
-
-        $this->db->select('`id`, `username`');
-        $this->db->from($this->table_name);
-        $this->db->where_in('`username`',$recipments);
-
-        $query = $this->db->get();
-
-        $result = array();
-
-        if ($query->num_rows() > 0)
-        {
-            foreach($query->result_array() as $row)
-            {
-                $result[$row['username']] = $row['id'];
-            }
-
-            return $result;
-
-        } else {
-                    return array();
-               }
-
-    }
-
-    function fetch_conversation_subject($safe_id)
-    {
-        $this->db->select('`conversations`.`conversation_subject`');
-        $this->db->from('`conversations`');
-        $this->db->where('`conversations`.`conversation_id`',$safe_id);
-        $this->db->limit(1);
-
-        $result = $this->db->get();
-
-        if ($result->num_rows() > 0)
-        {
-
-            return $result->row_array();
-
-        } else {
-                    return FALSE;
-               }
-
-    }
-
-    function update_last_view($safe_id)
-    {
-        $this->load->helper('date');
-
-        $data = array(
-                       'conversation_last_view' => now()
-                     );
-
-        $this->db->where('conversation_id', $safe_id);
-        $this->db->where('user_id', $this->session->userdata('user_id'));
-        $this->db->update('conversations_members', $data);
-
-    }
-
-    function add_message_to_conversation($safe_id,$message)
-    {
-        $this->load->helper('date');
-
-        $safe_message = $this->db->escape(htmlentities($message));
-
-        $data = array(
-                        'conversation_id' => $safe_id,
-                        'user_id'         => $this->session->userdata('user_id'),
-                        'message_date'    => now(),
-                        'message_text'    => $safe_message
-                     );
-
-        $this->db->insert('conversations_messages', $data);
-
-
-    }
-
-    function get_all_users()
-    {
-        $this->db->select('`users`.`username`');
-        $this->db->from('`users`');
-
-        $result = $this->db->get();
-
-        if ($result->num_rows() > 0)
-        {
-
-            return $result;
-
-        } else {
-                    return NULL;
-               }
-
-    }
-
-    function fetch_conversation_messages($conversation_id)
-    {
-        $this->db->select('`conversations_messages`.`message_date`');
-        $this->db->select('`conversations_messages`.`message_date` > `conversations_members`.`conversation_last_view` AS `message_unread`');
-        $this->db->select('`conversations_messages`.`message_text`');
-        $this->db->select('`users`.`username`');
-
-        $this->db->from('conversations_messages');
-
-        $this->db->join('`users`', 'conversations_messages.user_id = users.id','inner');
-        $this->db->join('`conversations_members`', 'conversations_messages.conversation_id = conversations_members.conversation_id','inner');
-
-        $this->db->where('`conversations_messages`.`conversation_id`', $conversation_id);
-        $this->db->where('`conversations_members`.`user_id`', $this->session->userdata('user_id'));
-
-        $this->db->order_by('`conversations_messages`.`message_date`',"desc");
-
-        $result = $this->db->get();
-
-        if ($result->num_rows() > 0)
-        {
-
-            return $result;
-
-        } else {
-                    return FALSE;
-               }
-
-    }
-
-    function validate_message($safe_id)
-    {
-        //check if user is part of given conversation
-        $this->db->select('COUNT(1)');
-        $this->db->from('`conversations_members`');
-        $this->db->where('conversation_id',$safe_id);
-        $this->db->where('user_id', $this->session->userdata('user_id'));
-        $this->db->where('conversation_deleted',0);
-
-        $query = $this->db->get();
-        $num   = $query->result_array();
-
-        if($num[0]['COUNT(1)'])
-        {
-            return TRUE;
-
-        } return FALSE;
-
-    }
-
-    function validate_and_delete($safe_id)
-    {
-        $this->db->trans_start();
-        if($this->validate_message($safe_id))
-        { //user is memeber od conversation
-
-            //fetch other users message status, distinct to lower numbers of data in big conversation
-            $this->db->distinct();
-            $this->db->select('`conversation_deleted`');
-            $this->db->from('`conversations_members`');
-            $this->db->where('user_id !=',$this->session->userdata('user_id'));
-            $this->db->where('conversation_id',$safe_id);
-
-            $result = $this->db->get();
-
-            if($result->num_rows() == 1 && $result->row_array() == 1)
-            { //everybody except user deleted conversation, so remove entry from database
-                $this->db->delete('conversations', array('conversation_id' => $safe_id));
-                $this->db->delete('conversations_memebers', array('conversation_id' => $safe_id));
-                $this->db->delete('conversations_messages', array('conversation_id' => $safe_id));
-
-                $this->db->trans_complete();
-
-                        if ($this->db->trans_status() === FALSE)
-                        {
-
-                           return FALSE;
-
-                        } else {
-
-                                   return TRUE;
-                               }
-
-            } else { //still active users, mark given message as deleted for logged user
-                        $data = array(
-                                       'conversation_deleted' => 1
-                                     );
-
-                        $this->db->where('conversation_id', $safe_id);
-                        $this->db->where('user_id', $this->session->userdata('user_id'));
-                        $this->db->update('conversations_members', $data);
-
-                        $this->db->trans_complete();
-
-                        if ($this->db->trans_status() === FALSE)
-                        {
-
-                           return FALSE;
-
-                        } else {
-
-                                   return TRUE;
-                               }
-
-
-                   }
-
-
-        } else {//stop transaction and return false, user is not member of given conversation
-                $this->db->trans_complete();
-                return FALSE;
-               }
-
-    }
-
-    function fetch_user_conversation($user_id,$sort)
-    {
-        $this->db->select('`conversations`.`conversation_id`');
-        $this->db->select('`conversations`.`conversation_subject`');
-        $this->db->select('MAX(`conversations_messages`.`message_date`) AS `conversation_last_reply`');
-        $this->db->select('MAX(`conversations_messages`.`message_date`) > `conversations_members`.`conversation_last_view` AS `conversation_undread`');
-
-        $this->db->from('`conversations`');
-
-        $this->db->join('conversations_messages', 'conversations.conversation_id = conversations_messages.conversation_id', 'left');
-        $this->db->join('conversations_members', 'conversations.conversation_id = conversations_members.conversation_id', 'inner');
-
-        $this->db->where('`conversations_members`.`user_id`', $user_id);
-        $this->db->where('`conversations_members`.`conversation_deleted` = ', 0);
-
-        $this->db->group_by('`conversations`.`conversation_id`');
-
-        if($sort === "by_date")
-        {
-            $this->db->order_by('`conversation_last_reply`',"desc");
-
-              } elseif ($sort === "by_topic")
-                    {
-
-                        $this->db->order_by('`conversation_subject`',"desc");
-
-                    } else {
-                                $this->db->order_by('`conversation_last_reply`',"desc");
-                           }
-
-        $query = $this->db->get();
-
-        if ($query->num_rows() > 0)
-        {
-            return $query;
-
-        } else {
-                    return FALSE;
-               }
-
-
-    }
-
-
-    function create_conversation($ids, $subject, $text)
-    {
-        $this->load->helper('date');
-
-        $this->db->escape(htmlentities($subject));
-        $this->db->escape(htmlentities($text));
-
-        $this->db->trans_start(); //transaction start
-
-            //create entry in conversations table
-            $data = array(
-                           'conversation_subject' => $subject
-                         );
-            $this->db->insert('conversations', $data);
-
-            //fetch last conversation id
-            $conversation_id = $this->db->insert_id();
-
-            //create entry in conversations_messeage table
-            $data2 = array(
-                            'conversation_id' => $conversation_id,
-                            'user_id'         => $this->session->userdata('user_id'),
-                            'message_date'    => now(),
-                            'message_text'    => $text
-                          );
-            $this->db->insert('conversations_messages', $data2);
-
-            //add current user to user list
-            $ids[] = $this->session->userdata('user_id');
-
-            //create VALUE part of query, insted of running multiple query, create single
-            $values = array();
-
-            foreach($ids as $id)
-            {
-                $id = (int) $id;
-
-                $values[] = "({$conversation_id}, {$id}, 0, 0)";
-            }
-
-            //create entrys in conversations_members. CI activeRecord don't support multiple VALUES in insert(), so we just run query
-            $this->db->query("INSERT INTO `conversations_members` (`conversation_id`, `user_id`, `conversation_last_view`, `conversation_deleted`)
-                              VALUES " . implode(', ',$values));
-
-
-        $this->db->trans_complete(); //transaction
-
-        if ($this->db->trans_status() === FALSE)
-        {
-
-            return FALSE;
-
-        } else {
-
-                    return TRUE;
-
-               }
-    }
-
     /* public get_error_message() {{{ */
     /**
-     * Can be invoked after any failed operation such as login or register.
+     * Can be invoked after any failed operation on database. Simply return private array of errors.
      *
      * @access public
      * @return string
@@ -413,28 +93,6 @@ class Dashboard_model extends CI_Model {
     function get_error_message()
     {
         return $this->error;
-    }
-    /* }}} */
-
-
-    /* public get_user_by_id($user_id, $activated) {{{ */
-    /**
-     * Get user record by Id
-     * get_user_by_id
-     *
-     * @param mixed $user_id
-     * @param mixed $activated
-     * @access public
-     * @return object
-     */
-    function get_user_by_id($user_id, $activated)
-    {
-        $this->db->where('id', $user_id);
-        $this->db->where('activated', $activated ? 1 : 0);
-
-        $query = $this->db->get($this->table_name);
-        if ($query->num_rows() == 1) return $query->row();
-        return NULL;
     }
     /* }}} */
 
@@ -463,6 +121,8 @@ class Dashboard_model extends CI_Model {
     /* public activate_new_email_do($user_id, $new_email_key) {{{ */
     /**
      * Activate new email (replace old email with new one) if activation key is valid.
+     * Database releated part.
+     *
      *
      * @param mixed $user_id
      * @param mixed $new_email_key
@@ -536,7 +196,7 @@ class Dashboard_model extends CI_Model {
 
     /* public is_email_available($email) {{{ */
     /**
-     * Check if email available for registering
+     * Check if email available for change
      *
      * @param mixed $email
      * @access public
@@ -578,6 +238,443 @@ class Dashboard_model extends CI_Model {
     /* }}} */
 
 
-}
+    /* public get_user_by_id($user_id, $activated) {{{ */
+    /**
+     * Get user record by Id
+     * get_user_by_id
+     *
+     * @param mixed $user_id
+     * @param mixed $activated
+     * @access public
+     * @return object
+     */
+    function get_user_by_id($user_id, $activated)
+    {
+        $this->db->where('id', $user_id);
+        $this->db->where('activated', $activated ? 1 : 0);
+
+        $query = $this->db->get($this->table_name);
+        if ($query->num_rows() == 1) return $query->row();
+        return NULL;
+    }
+    /* }}} */
+
+    /* public fetch_ids($recipments) {{{ */
+    /**
+     * Fetch ids from database for given array of usernames.
+     *
+     * @param mixed $recipments
+     * @access public
+     * @return array (empty array on failed)
+     */
+    function fetch_ids($recipments)
+    {
+        $this->load->helper('security');
+
+        foreach($recipments as &$recipment)
+        {
+            $this->db->escape($recipment);
+        }
+
+        $this->db->select('`id`, `username`');
+        $this->db->from($this->table_name);
+        $this->db->where_in('`username`',$recipments);
+
+        $query = $this->db->get();
+
+        $result = array();
+
+        if ($query->num_rows() > 0)
+        {
+            foreach($query->result_array() as $row)
+            {
+                $result[$row['username']] = $row['id'];
+            }
+
+            return $result;
+
+        } else {
+                    return array();
+               }
+
+    }
+    /* }}} */
+
+    /* public fetch_conversation_subject($safe_id) {{{ */
+    /**
+     * Fetch conversation subject for given conversation ID.
+     *
+     * @param mixed $safe_id
+     * @access public
+     * @return string (bool on failed)
+     */
+    function fetch_conversation_subject($safe_id)
+    {
+        $this->db->select('`conversations`.`conversation_subject`');
+        $this->db->from('`conversations`');
+        $this->db->where('`conversations`.`conversation_id`',$safe_id);
+        $this->db->limit(1);
+
+        $result = $this->db->get();
+
+        if ($result->num_rows() > 0)
+        {
+
+            return $result->row_array();
+
+        } else {
+                    return FALSE;
+               }
+
+    }
+    /* }}} */
+
+    /* public get_all_users() {{{ */
+    /**
+     * Get all available usernames from database.
+     *
+     * @access public
+     * @return object (bool on failed)
+     */
+    function get_all_users()
+    {
+        $this->db->select('`users`.`username`');
+        $this->db->from('`users`');
+
+        $result = $this->db->get();
+
+        if ($result->num_rows() > 0)
+        {
+
+            return $result;
+
+        } else {
+                    return NULL;
+               }
+
+    }
+    /* }}} */
+
+    /* public validate_message($safe_id) {{{ */
+    /**
+     * Check if user is part of given conversation (ID param), so we can redirect users
+     * who try to access or delete other users messages.
+     *
+     * @param mixed $safe_id
+     * @access public
+     * @return bool
+     */
+    function validate_message($safe_id)
+    {
+        //check if user is part of given conversation
+        $this->db->select('COUNT(1)');
+        $this->db->from('`conversations_members`');
+        $this->db->where('conversation_id',$safe_id);
+        $this->db->where('user_id', $this->session->userdata('user_id'));
+        $this->db->where('conversation_deleted',0);
+
+        $query = $this->db->get();
+        $num   = $query->result_array();
+
+        if($num[0]['COUNT(1)'])
+        {
+            return TRUE;
+
+        } return FALSE;
+
+    }
+    /* }}} */
+
+    /* public validate_and_delete($safe_id) {{{ */
+    /**
+     * Validate user and delete message from inbox.
+     * If all recipments of message deleted conversation,
+     * this function delete records from tables to clenup database.
+     *
+     * @param mixed $safe_id
+     * @access public
+     * @return bool
+     */
+    function validate_and_delete($safe_id)
+    {
+        $this->db->trans_start();
+        if($this->validate_message($safe_id))
+        { //user is memeber od conversation
+
+            //fetch other users message status, distinct to lower numbers of data in big conversation
+            $this->db->distinct();
+            $this->db->select('`conversation_deleted`');
+            $this->db->from('`conversations_members`');
+            $this->db->where('user_id !=',$this->session->userdata('user_id'));
+            $this->db->where('conversation_id',$safe_id);
+
+            $result = $this->db->get();
+
+            if($result->num_rows() == 1 && $result->row_array() == 1)
+            { //everybody except user deleted conversation, so remove entry from database
+                $this->db->delete('conversations', array('conversation_id' => $safe_id));
+                $this->db->delete('conversations_memebers', array('conversation_id' => $safe_id));
+                $this->db->delete('conversations_messages', array('conversation_id' => $safe_id));
+
+                $this->db->trans_complete();
+
+                        if ($this->db->trans_status() === FALSE)
+                        {
+
+                           return FALSE;
+
+                        } else {
+
+                                   return TRUE;
+                               }
+
+            } else { //still active users, mark given message as deleted for logged user
+                        $data = array(
+                                       'conversation_deleted' => 1
+                                     );
+
+                        $this->db->where('conversation_id', $safe_id);
+                        $this->db->where('user_id', $this->session->userdata('user_id'));
+                        $this->db->update('conversations_members', $data);
+
+                        $this->db->trans_complete();
+
+                        if ($this->db->trans_status() === FALSE)
+                        {
+
+                           return FALSE;
+
+                        } else {
+
+                                   return TRUE;
+                               }
+
+
+                   }
+
+
+        } else {//stop transaction and return false, user is not member of given conversation
+                $this->db->trans_complete();
+                return FALSE;
+               }
+
+    }
+    /* }}} */
+
+    /* public create_conversation($ids, $subject, $text) {{{ */
+    /**
+     * Create conversation:
+     * add recipments to table
+     * add conversation record to table
+     * add message to table
+     *
+     * @param mixed $ids
+     * @param mixed $subject
+     * @param mixed $text
+     * @access public
+     * @return bool
+     */
+    function create_conversation($ids, $subject, $text)
+    {
+        $this->load->helper('date');
+
+        $this->db->escape(htmlentities($subject));
+        $this->db->escape(htmlentities($text));
+
+        $this->db->trans_start(); //transaction start
+
+            //create entry in conversations table
+            $data = array(
+                           'conversation_subject' => $subject
+                         );
+            $this->db->insert('conversations', $data);
+
+            //fetch last conversation id
+            $conversation_id = $this->db->insert_id();
+
+            //create entry in conversations_messeage table
+            $data2 = array(
+                            'conversation_id' => $conversation_id,
+                            'user_id'         => $this->session->userdata('user_id'),
+                            'message_date'    => now(),
+                            'message_text'    => $text
+                          );
+            $this->db->insert('conversations_messages', $data2);
+
+            //add current user to user list
+            $ids[] = $this->session->userdata('user_id');
+
+            //create VALUE part of query, insted of running multiple query, create single
+            $values = array();
+
+            foreach($ids as $id)
+            {
+                $id = (int) $id;
+
+                $values[] = "({$conversation_id}, {$id}, 0, 0)";
+            }
+
+            //create entrys in conversations_members. CI activeRecord don't support multiple VALUES in insert(), so we just run query
+            $this->db->query("INSERT INTO `conversations_members` (`conversation_id`, `user_id`, `conversation_last_view`, `conversation_deleted`)
+                              VALUES " . implode(', ',$values));
+
+
+        $this->db->trans_complete(); //transaction
+
+        if ($this->db->trans_status() === FALSE)
+        {
+
+            return FALSE;
+
+        } else {
+
+                    return TRUE;
+
+               }
+    }
+    /* }}} */
+
+    /* public add_message_to_conversation($safe_id,$message) {{{ */
+    /**
+     * Add reply to conversation
+     *
+     * @param mixed $safe_id
+     * @param mixed $message
+     * @access public
+     * @return void
+     */
+    function add_message_to_conversation($safe_id,$message)
+    {
+        $this->load->helper('date');
+
+        $safe_message = $this->db->escape(htmlentities($message));
+
+        $data = array(
+                        'conversation_id' => $safe_id,
+                        'user_id'         => $this->session->userdata('user_id'),
+                        'message_date'    => now(),
+                        'message_text'    => $safe_message
+                     );
+
+        $this->db->insert('conversations_messages', $data);
+    }
+    /* }}} */
+
+    /* public fetch_user_conversation($user_id,$sort) {{{ */
+    /**
+     *  Fetch conversation for given user and sort mysql result.
+     *
+     * @param mixed $user_id
+     * @param mixed $sort
+     * @access public
+     * @return object (bool on failed)
+     */
+    function fetch_user_conversation($user_id,$sort)
+    {
+        $this->db->select('`conversations`.`conversation_id`');
+        $this->db->select('`conversations`.`conversation_subject`');
+        $this->db->select('MAX(`conversations_messages`.`message_date`) AS `conversation_last_reply`');
+        $this->db->select('MAX(`conversations_messages`.`message_date`) > `conversations_members`.`conversation_last_view` AS `conversation_undread`');
+
+        $this->db->from('`conversations`');
+
+        $this->db->join('conversations_messages', 'conversations.conversation_id = conversations_messages.conversation_id', 'left');
+        $this->db->join('conversations_members', 'conversations.conversation_id = conversations_members.conversation_id', 'inner');
+
+        $this->db->where('`conversations_members`.`user_id`', $user_id);
+        $this->db->where('`conversations_members`.`conversation_deleted` = ', 0);
+
+        $this->db->group_by('`conversations`.`conversation_id`');
+
+        if($sort === "by_date")
+        {
+            $this->db->order_by('`conversation_last_reply`',"desc");
+
+              } elseif ($sort === "by_topic")
+                    {
+
+                        $this->db->order_by('`conversation_subject`',"desc");
+
+                    } else {
+                                $this->db->order_by('`conversation_last_reply`',"desc");
+                           }
+
+        $query = $this->db->get();
+
+        if ($query->num_rows() > 0)
+        {
+            return $query;
+
+        } else {
+                    return FALSE;
+               }
+
+
+    }
+    /* }}} */
+
+    /* public fetch_conversation_messages($conversation_id) {{{ */
+    /**
+     * Fetch all replys for given conversation ID
+     *
+     * @param mixed $conversation_id
+     * @access public
+     * @return void
+     */
+    function fetch_conversation_messages($conversation_id)
+    {
+        $this->db->select('`conversations_messages`.`message_date`');
+        $this->db->select('`conversations_messages`.`message_date` > `conversations_members`.`conversation_last_view` AS `message_unread`');
+        $this->db->select('`conversations_messages`.`message_text`');
+        $this->db->select('`users`.`username`');
+
+        $this->db->from('conversations_messages');
+
+        $this->db->join('`users`', 'conversations_messages.user_id = users.id','inner');
+        $this->db->join('`conversations_members`', 'conversations_messages.conversation_id = conversations_members.conversation_id','inner');
+
+        $this->db->where('`conversations_messages`.`conversation_id`', $conversation_id);
+        $this->db->where('`conversations_members`.`user_id`', $this->session->userdata('user_id'));
+
+        $this->db->order_by('`conversations_messages`.`message_date`',"desc");
+
+        $result = $this->db->get();
+
+        if ($result->num_rows() > 0)
+        {
+
+            return $result;
+
+        } else {
+                    return FALSE;
+               }
+
+    }
+    /* }}} */
+
+    /* public update_last_view($safe_id) {{{ */
+    /**
+     * Check if user allready read conversation
+     *
+     * @param mixed $safe_id
+     * @access public
+     * @return void
+     */
+    function update_last_view($safe_id)
+    {
+        $this->load->helper('date');
+
+        $data = array(
+                       'conversation_last_view' => now()
+                     );
+
+        $this->db->where('conversation_id', $safe_id);
+        $this->db->where('user_id', $this->session->userdata('user_id'));
+        $this->db->update('conversations_members', $data);
+
+    }
+    /* }}} */
+
+ }
 /* End of file Dashboard_model.php */
 /* Location: ./application/modules/system/models/dashboard_model.php */

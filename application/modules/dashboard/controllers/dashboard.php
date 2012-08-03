@@ -2,13 +2,23 @@
 
 class Dashboard extends MX_Controller
 {
+    /* protected __construct() {{{ */
+    /**
+     * __construct
+     *
+     * Use HMVC to check if user is logged in to site.
+     * Load need library, models, language files, etc.
+     *
+     * @access protected
+     * @return void
+     */
     function __construct()
     {
         parent::__construct();
 
-//        $this->output->enable_profiler(TRUE);
+      //$this->output->enable_profiler(TRUE);
 
-       //No direct access, if username is not logged in, redirect to login page
+      //No direct access, if username is not logged in, redirect to login page
       if (!modules::run('login/is_logged_in')) {                            // not logged in or activated
           redirect('/login/');
       }
@@ -22,57 +32,7 @@ class Dashboard extends MX_Controller
 
         $this->load->model('dashboard/dashboard_model');
     }
-
-    function show_message($id)
-    {
-        $safe_id = (int) $id;
-        $updated = FALSE;
-
-        if($this->dashboard_model->validate_message($safe_id))
-        {
-            $this->form_validation->set_rules('message' , 'Message'   , 'trim|required|xss_clean');
-
-            if ($this->form_validation->run())
-            {
-                $this->dashboard_model->add_message_to_conversation($safe_id,$this->form_validation->set_value('message'));
-                $this->dashboard_model->update_last_view($safe_id);
-                $updated = TRUE;
-
-            } else {
-                            $errors = $this->dashboard_model->get_error_message();
-                            foreach ($errors as $k => $v)    $data['errors'][$k] = $this->lang->line($v);
-                   }
-
-
-        $data['subject'] = $this->dashboard_model->fetch_conversation_subject($id);
-
-        if(!$updated) $this->dashboard_model->update_last_view($safe_id);
-
-
-            $data['conv_messages'] = $this->dashboard_model->fetch_conversation_messages($safe_id);
-
-            $this->load->view('frontend/head');
-            $this->load->view('dashboard/conversation', $data);
-            $this->load->view('frontend/footer');
-
-        } else {
-                    $this->_show_message($this->lang->line('wrong_id'));
-               }
-    }
-
-    function delete($id)
-    {
-        $conversation_id = (int) $id;
-
-        if($this->dashboard_model->validate_and_delete($conversation_id))
-        {
-            $this->_show_message($this->lang->line('del_success'));
-
-        } else  {
-                    $this->_show_message($this->lang->line('del_failed'));
-                }
-
-    }
+    /* }}} */
 
     /* public index() {{{ */
     /**
@@ -87,6 +47,32 @@ class Dashboard extends MX_Controller
     }
     /* }}} */
 
+    /* public inbox() {{{ */
+    /**
+     * Show inbox to logged user
+     *
+     * @access public
+     * @return void
+     */
+    function inbox($sort_type="by_date")
+    {
+        $sort = $this->security->xss_clean($sort_type);
+
+        $data['messages'] = $this->dashboard_model->fetch_user_conversation($this->session->userdata('user_id'),$sort);
+
+        $this->load->view('frontend/head');
+        $this->load->view('dashboard/inbox',$data);
+        $this->load->view('frontend/footer');
+    }
+    /* }}} */
+
+    /* public export() {{{ */
+    /**
+     * Export user conversation list from inbox to excel spredsheet.
+     *
+     * @access public
+     * @return void
+     */
     function export()
     {
         $this->load->helper('date');
@@ -111,23 +97,28 @@ class Dashboard extends MX_Controller
         $this->excel->make_from_array($titles, $array);
         //     $this->excel->make_from_db($data);
     }
+    /* }}} */
 
-    /* public inbox() {{{ */
+    /* public delete($id) {{{ */
     /**
-     * Show inbox to logged user
+     * Delete message from user inbox.
      *
+     * @param mixed $id
      * @access public
      * @return void
      */
-    function inbox($sort_type="by_date")
+    function delete($id)
     {
-        $sort = $this->security->xss_clean($sort_type);
+        $conversation_id = (int) $id;
 
-        $data['messages'] = $this->dashboard_model->fetch_user_conversation($this->session->userdata('user_id'),$sort);
+        if($this->dashboard_model->validate_and_delete($conversation_id))
+        {
+            $this->_show_message($this->lang->line('del_success'));
 
-        $this->load->view('frontend/head');
-        $this->load->view('dashboard/inbox',$data);
-        $this->load->view('frontend/footer');
+        } else  {
+                    $this->_show_message($this->lang->line('del_failed'));
+                }
+
     }
     /* }}} */
 
@@ -147,6 +138,8 @@ class Dashboard extends MX_Controller
     }
     /* }}} */
 
+//--->controll panel actions
+
     /* public logout() {{{ */
     /**
      * Logout from page, clear autologin.
@@ -163,76 +156,6 @@ class Dashboard extends MX_Controller
         redirect('/login');
     }
     /* }}} */
-
-    function _check_recipments()
-    {
-        $users = $this->input->post('to');
-
-
-        if(preg_match('#^[A-Za-z0-9, ]+$#i',$users) === 0)
-        {
-
-            $this->form_validation->set_message('_check_recipments', $this->lang->line('recipment_list_error'));
-            return FALSE;
-
-        } else {
-                    $names = explode(',',$users);
-                    foreach($names as &$name)
-                    {
-                        $name = trim($name);
-                    }
-
-                    $user_ids = $this->dashboard_model->fetch_ids($names);
-
-                    if(count($name) !== count($user_ids) && count(array_diff($names, array_keys($user_ids)))>0 )
-                    {
-                        $this->form_validation->set_message('_check_recipments', $this->lang->line('users_not_found'). implode(' , ',array_diff($names, array_keys($user_ids)))  . ".");
-                        return FALSE;
-
-                    } else return TRUE;
-               }
-
-
-    }
-
-    function new_conversation()
-    {
-            $data = array();
-
-            $this->form_validation->set_rules('to'      , 'To'        , 'trim|required|xss_clean|callback__check_recipments');
-            $this->form_validation->set_rules('subject' , 'Subject'   , 'trim|required|xss_clean');
-            $this->form_validation->set_rules('text'    , 'Text area' , 'trim|required|xss_clean');
-
-            if ($this->form_validation->run())
-            {
-                    $names = explode(',',$this->form_validation->set_value('to'));
-                    foreach($names as &$name)
-                    {
-                        $name = trim($name);
-                    }
-                    $ids = $this->dashboard_model->fetch_ids($names);
-
-                if($this->dashboard_model->create_conversation(
-                                                                array_unique($ids),
-                                                                $this->form_validation->set_value('subject'),
-                                                                $this->form_validation->set_value('text')
-                                                              ))
-                {
-
-                    $this->_show_message(sprintf($this->lang->line('new_message_send')));
-
-                } else {
-                            $errors = $this->dashboard_model->get_error_message();
-                            foreach ($errors as $k => $v)    $data['errors'][$k] = $this->lang->line($v);
-                       }
-            }
-
-            $data['users'] = $this->dashboard_model->get_all_users();
-
-            $this->load->view('frontend/head');
-            $this->load->view('dashboard/new_conversation', $data);
-            $this->load->view('frontend/footer');
-    }
 
     /* public email_change() {{{ */
     /**
@@ -270,9 +193,6 @@ class Dashboard extends MX_Controller
             $this->load->view('dashboard/change_email_form', $data);
             $this->load->view('frontend/footer');
     }
-
-
-
     /* }}} */
 
     /* public change_password() {{{ */
@@ -333,10 +253,146 @@ class Dashboard extends MX_Controller
     }
     /* }}} */
 
+    /* public new_conversation() {{{ */
+    /**
+     * Start new conversation. Validate send form, and add data to database
+     * using builtin transaction from codeigniter to ensecure data integrity.
+     *
+     * @access public
+     * @return void
+     */
+    function new_conversation()
+    {
+            $data = array();
+
+            $this->form_validation->set_rules('to'      , 'To'        , 'trim|required|xss_clean|callback__check_recipments');
+            $this->form_validation->set_rules('subject' , 'Subject'   , 'trim|required|xss_clean');
+            $this->form_validation->set_rules('text'    , 'Text area' , 'trim|required|xss_clean');
+
+            if ($this->form_validation->run())
+            {
+                    $names = explode(',',$this->form_validation->set_value('to'));
+                    foreach($names as &$name)
+                    {
+                        $name = trim($name);
+                    }
+                    $ids = $this->dashboard_model->fetch_ids($names);
+
+                if($this->dashboard_model->create_conversation(
+                                                                array_unique($ids),
+                                                                $this->form_validation->set_value('subject'),
+                                                                $this->form_validation->set_value('text')
+                                                              ))
+                {
+
+                    $this->_show_message(sprintf($this->lang->line('new_message_send')));
+
+                } else {
+                            $errors = $this->dashboard_model->get_error_message();
+                            foreach ($errors as $k => $v)    $data['errors'][$k] = $this->lang->line($v);
+                       }
+            }
+
+            $data['users'] = $this->dashboard_model->get_all_users();
+
+            $this->load->view('frontend/head');
+            $this->load->view('dashboard/new_conversation', $data);
+            $this->load->view('frontend/footer');
+    }
+    /* }}} */
+
+    /* protected _check_recipments() {{{ */
+    /**
+     *  Callback function to new conversation form validation.We check if
+     *  requested users list is in right format (comma separated values), and
+     *  show message to user if there is any errors.
+     *
+     * @access protected
+     * @return void
+     */
+    function _check_recipments()
+    {
+        $users = $this->input->post('to');
+
+
+        if(preg_match('#^[A-Za-z0-9, ]+$#i',$users) === 0)
+        {
+
+            $this->form_validation->set_message('_check_recipments', $this->lang->line('recipment_list_error'));
+            return FALSE;
+
+        } else {
+                    $names = explode(',',$users);
+                    foreach($names as &$name)
+                    {
+                        $name = trim($name);
+                    }
+
+                    $user_ids = $this->dashboard_model->fetch_ids($names);
+
+                    if(count($name) !== count($user_ids) && count(array_diff($names, array_keys($user_ids)))>0 )
+                    {
+                        $this->form_validation->set_message('_check_recipments', $this->lang->line('users_not_found'). implode(' , ',array_diff($names, array_keys($user_ids)))  . ".");
+                        return FALSE;
+
+                    } else return TRUE;
+               }
+
+    }
+    /* }}} */
+
+    /* public show_message($id) {{{ */
+    /**
+     * Show conversation detail. Check if user is part of conversation, and add
+     * replay if user send form.
+     *
+     * @param mixed $id
+     * @access public
+     * @return void
+     */
+    function show_message($id)
+    {
+        $safe_id = (int) $id;
+        $updated = FALSE;
+
+        if($this->dashboard_model->validate_message($safe_id))
+        {
+            $this->form_validation->set_rules('message' , 'Message'   , 'trim|required|xss_clean');
+
+            if ($this->form_validation->run())
+            {
+                $this->dashboard_model->add_message_to_conversation($safe_id,$this->form_validation->set_value('message'));
+                $this->dashboard_model->update_last_view($safe_id);
+                $updated = TRUE;
+
+            } else {
+                            $errors = $this->dashboard_model->get_error_message();
+                            foreach ($errors as $k => $v)    $data['errors'][$k] = $this->lang->line($v);
+                   }
+
+
+        $data['subject'] = $this->dashboard_model->fetch_conversation_subject($id);
+
+        if(!$updated) $this->dashboard_model->update_last_view($safe_id);
+
+
+            $data['conv_messages'] = $this->dashboard_model->fetch_conversation_messages($safe_id);
+
+            $this->load->view('frontend/head');
+            $this->load->view('dashboard/conversation', $data);
+            $this->load->view('frontend/footer');
+
+        } else {
+                    $this->_show_message($this->lang->line('wrong_id'));
+               }
+    }
+    /* }}} */
+
+//--->GENERAL PUROPSE METHODS
 
     /* public message() {{{ */
     /**
-     * Show registration message to user.
+     * Show result message to user.
      *
      * @access public
      * @return void
@@ -390,7 +446,6 @@ class Dashboard extends MX_Controller
         $this->email->send            ( );
     }
     /* }}} */
-
 
 }
 

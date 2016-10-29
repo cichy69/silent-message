@@ -1,18 +1,18 @@
 <?php if (!defined('BASEPATH')) exit('No direct script access allowed');
 
-if(!class_exists('PasswordHash'))
-{
+if (!class_exists('PasswordHash')) {
     require_once("phpass-0.3/PasswordHash.php");
 }
 
-if (!defined('STATUS_ACTIVATED'))     define('STATUS_ACTIVATED', '1');
+if (!defined('STATUS_ACTIVATED')) define('STATUS_ACTIVATED', '1');
 if (!defined('STATUS_NOT_ACTIVATED')) define('STATUS_NOT_ACTIVATED', '0');
 
-class Login_model extends CI_Model {
+class Login_model extends CI_Model
+{
 
-    private $table_name         = 'users';            // user accounts
+    private $table_name = 'users';            // user accounts
     private $attemps_table_name = 'login_attemps';    // user profiles
-    private $error              = array();
+    private $error = array();
 
     function __construct()
     {
@@ -20,10 +20,10 @@ class Login_model extends CI_Model {
 
         $ci =& get_instance();
 
-        $this->table_name            = $ci->config->item('db_table_prefix').$this->table_name;
-        $this->attemps_table_name    = $ci->config->item('db_table_prefix').$this->attemps_table_name;
+        $this->table_name = $ci->config->item('db_table_prefix') . $this->table_name;
+        $this->attemps_table_name = $ci->config->item('db_table_prefix') . $this->attemps_table_name;
 
-        $this->load->model('login/autologin_model','login/attempts_model');
+        $this->load->model('login/autologin_model', 'login/attempts_model');
     }
 
     /**
@@ -58,71 +58,64 @@ class Login_model extends CI_Model {
      */
     function login_do($login, $password, $remember, $login_by_username, $login_by_email)
     {
-        if ((strlen($login) > 0) AND (strlen($password) > 0))
-        {
+        if ((strlen($login) > 0) AND (strlen($password) > 0)) {
             // Which function to use to login (based on config)
-            if ($login_by_username AND $login_by_email)
-            {
+            if ($login_by_username AND $login_by_email) {
                 $get_user_func = 'get_user_by_login';
 
-            } else if ($login_by_username)
-                   {
-                       $get_user_func = 'get_user_by_username';
+            } else if ($login_by_username) {
+                $get_user_func = 'get_user_by_username';
 
-                   } else {
-                            $get_user_func = 'get_user_by_email';
-                          }
+            } else {
+                $get_user_func = 'get_user_by_email';
+            }
 
-            if (!is_null($user = $this->login_model->$get_user_func($login)))
-            {                                                                    // login ok
+            if (!is_null($user = $this->login_model->$get_user_func($login))) {                                                                    // login ok
                 // Does password match hash in database?
                 $hasher = new PasswordHash(
-                                            $this->config->item('phpass_hash_strength'),
-                                            $this->config->item('phpass_hash_portable'));
+                    $this->config->item('phpass_hash_strength'),
+                    $this->config->item('phpass_hash_portable'));
 
                 if ($hasher->CheckPassword($password, $user->password)) {        // password ok
 
-                    if ($user->banned == 1)
-                    {                                                            // fail - banned
+                    if ($user->banned == 1) {                                                            // fail - banned
                         $this->error = array('banned' => $user->ban_reason);
 
                     } else {
-                                $this->session->set_userdata(array(
-                                                                    'user_id'  => $user->id,
-                                                                    'username' => $user->username,
-                                                                    'status'   => ($user->activated == 1) ? STATUS_ACTIVATED : STATUS_NOT_ACTIVATED,
-                                ));
+                        $this->session->set_userdata(array(
+                            'user_id' => $user->id,
+                            'username' => $user->username,
+                            'status' => ($user->activated == 1) ? STATUS_ACTIVATED : STATUS_NOT_ACTIVATED,
+                        ));
 
-                                if ($user->activated == 0)
-                                {                                                // fail - not activated
-                                    $this->error = array('not_activated' => '');
+                        if ($user->activated == 0) {                                                // fail - not activated
+                            $this->error = array('not_activated' => '');
 
-                                } else {                                         // success
-                                            if ($remember)
-                                            {
-                                                $this->load->model('login/autologin_model');
-                                                $this->autologin_model->create_autologin($user->id);
-                                            }
+                        } else {                                         // success
+                            if ($remember) {
+                                $this->load->model('login/autologin_model');
+                                $this->autologin_model->create_autologin($user->id);
+                            }
 
-                                            $this->_clear_login_attempts($login);
+                            $this->_clear_login_attempts($login);
 
-                                            $this->update_login_info(
-                                                                        $user->id,
-                                                                        $this->config->item('login_record_ip'),
-                                                                        $this->config->item('login_record_time'));
+                            $this->update_login_info(
+                                $user->id,
+                                $this->config->item('login_record_ip'),
+                                $this->config->item('login_record_time'));
 
-                                            return TRUE;
-                                      }
-                           }
+                            return TRUE;
+                        }
+                    }
                 } else {                                                        // fail - wrong password
-                            $this->_increase_login_attempt($login);
-                            $this->error = array('password' => 'auth_incorrect_password');
-                       }
+                    $this->_increase_login_attempt($login);
+                    $this->error = array('password' => 'auth_incorrect_password');
+                }
 
             } else {                                                            // fail - wrong login
-                        $this->_increase_login_attempt($login);
-                        $this->error = array('login' => 'auth_incorrect_login');
-                   }
+                $this->_increase_login_attempt($login);
+                $this->error = array('login' => 'auth_incorrect_login');
+            }
         }
 
         return FALSE;
@@ -130,46 +123,29 @@ class Login_model extends CI_Model {
     /* }}} */
 
     /* public is_max_login_attempts_exceeded($login) {{{ */
-    /**
-     * Check if login attempts exceeded max login attempts (specified in config)
-     *
-     * @param mixed $login
-     * @access public
-     * @return bool
-     */
-    function is_max_login_attempts_exceeded($login)
-    {
-        if ($this->config->item('login_count_attempts'))
-        {
-            return $this->attempts_model->get_attempts_num($this->input->ip_address(), $login)
-                    >= $this->config->item('login_max_attempts');
-        }
-        return FALSE;
-    }
-    /* }}} */
 
-    /* private increase_login_attempt($login) {{{ */
     /**
-     * Increase number of attempts for given IP-address and login
+     * Clear all attempt records for given IP-address and login
      * (if attempts to login is being counted)
      *
      * @param mixed $login
      * @access private
      * @return void
      */
-    private function _increase_login_attempt($login)
+    private function _clear_login_attempts($login)
     {
-        if ($this->config->item('login_count_attempts'))
-        {
-            if (!$this->is_max_login_attempts_exceeded($login))
-            {
-                $this->attempts_model->increase_attempt($this->input->ip_address(), $login);
-            }
+        if ($this->config->item('login_count_attempts')) {
+            $this->load->model('login/attempts_model');
+            $this->attempts_model->clear_attempts(
+                $this->input->ip_address(),
+                $login,
+                $this->config->item('login_attempt_expire'));
         }
     }
     /* }}} */
 
-    /* public update_login_info($user_id, $record_ip, $record_time) {{{ */
+    /* private increase_login_attempt($login) {{{ */
+
     /**
      * Update user login info, such as IP-address or login time, and
      * clear previously generated (but not activated) passwords.
@@ -185,37 +161,55 @@ class Login_model extends CI_Model {
         $this->db->set('new_password_key', NULL);
         $this->db->set('new_password_requested', NULL);
 
-        if ($record_ip)     $this->db->set('last_ip'    , $this->input->ip_address());
-        if ($record_time)   $this->db->set('last_login' , date('Y-m-d H:i:s'));
+        if ($record_ip) $this->db->set('last_ip', $this->input->ip_address());
+        if ($record_time) $this->db->set('last_login', date('Y-m-d H:i:s'));
 
         $this->db->where('id', $user_id);
         $this->db->update($this->table_name);
     }
     /* }}} */
 
-    /* private clear_login_attempts($login) {{{ */
+    /* public update_login_info($user_id, $record_ip, $record_time) {{{ */
+
     /**
-     * Clear all attempt records for given IP-address and login
+     * Increase number of attempts for given IP-address and login
      * (if attempts to login is being counted)
      *
      * @param mixed $login
      * @access private
      * @return void
      */
-    private function _clear_login_attempts($login)
+    private function _increase_login_attempt($login)
     {
-        if ($this->config->item('login_count_attempts'))
-        {
-            $this->load->model('login/attempts_model');
-            $this->attempts_model->clear_attempts(
-                                                    $this->input->ip_address(),
-                                                    $login,
-                                                    $this->config->item('login_attempt_expire'));
+        if ($this->config->item('login_count_attempts')) {
+            if (!$this->is_max_login_attempts_exceeded($login)) {
+                $this->attempts_model->increase_attempt($this->input->ip_address(), $login);
+            }
         }
     }
     /* }}} */
 
+    /* private clear_login_attempts($login) {{{ */
+
+    /**
+     * Check if login attempts exceeded max login attempts (specified in config)
+     *
+     * @param mixed $login
+     * @access public
+     * @return bool
+     */
+    function is_max_login_attempts_exceeded($login)
+    {
+        if ($this->config->item('login_count_attempts')) {
+            return $this->attempts_model->get_attempts_num($this->input->ip_address(), $login)
+            >= $this->config->item('login_max_attempts');
+        }
+        return FALSE;
+    }
+    /* }}} */
+
     /* public logout() {{{ */
+
     /**
      * Locationgout user from the site
      *
@@ -278,6 +272,93 @@ class Login_model extends CI_Model {
     /* }}} */
 
     /* public get_user_by_login($login) {{{ */
+
+    /**
+     * Get user record by username
+     *
+     * @param mixed $username
+     * @access public
+     * @return object
+     */
+    function get_user_by_username($username)
+    {
+        $this->db->where('LOWER(username)=', strtolower($username));
+
+        $query = $this->db->get($this->table_name);
+        if ($query->num_rows() == 1) return $query->row();
+        return NULL;
+    }
+    /* }}} */
+
+    /* public get_user_by_username($username) {{{ */
+
+    /**
+     * Get user record by email
+     *
+     * @param mixed $email
+     * @access public
+     * @return object
+     */
+    function get_user_by_email($email)
+    {
+        $this->db->where('LOWER(email)=', strtolower($email));
+
+        $query = $this->db->get($this->table_name);
+        if ($query->num_rows() == 1) return $query->row();
+        return NULL;
+    }
+    /* }}} */
+
+    /* public get_user_by_email($email) {{{ */
+
+    /**
+     * Can be invoked after any failed operation such as login or register.
+     *
+     * @access public
+     * @return string
+     */
+    function get_error_message()
+    {
+        return $this->error;
+    }
+    /* }}} */
+
+    /* public get_error_message() {{{ */
+
+    /**
+     * Set new password key for user and return some data about user:
+     * user_id, username, email, new_pass_key.
+     * The password key can be used to verify user when resetting his/her password.
+     *
+     * @param mixed $login
+     * @access public
+     * @return array
+     */
+    function forgot_password($login)
+    {
+        if (strlen($login) > 0) {
+            if (!is_null($user = $this->get_user_by_login($login))) {
+
+                $data = array(
+                    'user_id' => $user->id,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'new_pass_key' => md5(rand() . microtime()),
+                );
+
+                $this->_set_password_key($user->id, $data['new_pass_key']);
+                return $data;
+
+            } else {
+                $this->error = array('login' => 'auth_incorrect_email_or_username');
+            }
+        }
+        return NULL;
+    }
+    /* }}} */
+
+    /* public forgot_password($login) {{{ */
+
     /**
      * Get user record by login (username or email)
      *
@@ -296,89 +377,8 @@ class Login_model extends CI_Model {
     }
     /* }}} */
 
-    /* public get_user_by_username($username) {{{ */
-    /**
-     * Get user record by username
-     *
-     * @param mixed $username
-     * @access public
-     * @return object
-     */
-    function get_user_by_username($username)
-    {
-        $this->db->where('LOWER(username)=', strtolower($username));
-
-        $query = $this->db->get($this->table_name);
-        if ($query->num_rows() == 1) return $query->row();
-        return NULL;
-    }
-    /* }}} */
-
-    /* public get_user_by_email($email) {{{ */
-    /**
-     * Get user record by email
-     *
-     * @param mixed $email
-     * @access public
-     * @return object
-     */
-    function get_user_by_email($email)
-    {
-        $this->db->where('LOWER(email)=', strtolower($email));
-
-        $query = $this->db->get($this->table_name);
-        if ($query->num_rows() == 1) return $query->row();
-        return NULL;
-    }
-    /* }}} */
-
-    /* public get_error_message() {{{ */
-    /**
-     * Can be invoked after any failed operation such as login or register.
-     *
-     * @access public
-     * @return string
-     */
-    function get_error_message()
-    {
-        return $this->error;
-    }
-    /* }}} */
-
-    /* public forgot_password($login) {{{ */
-    /**
-     * Set new password key for user and return some data about user:
-     * user_id, username, email, new_pass_key.
-     * The password key can be used to verify user when resetting his/her password.
-     *
-     * @param mixed $login
-     * @access public
-     * @return array
-     */
-    function forgot_password($login)
-    {
-        if (strlen($login) > 0) {
-            if (!is_null($user = $this->get_user_by_login($login))) {
-
-                $data = array(
-                                'user_id'      => $user->id,
-                                'username'     => $user->username,
-                                'email'        => $user->email,
-                                'new_pass_key' => md5(rand().microtime()),
-                );
-
-                $this->_set_password_key($user->id, $data['new_pass_key']);
-                return $data;
-
-            } else {
-                $this->error = array('login' => 'auth_incorrect_email_or_username');
-            }
-        }
-        return NULL;
-    }
-    /* }}} */
-
     /* private _set_password_key($user_id, $new_pass_key) {{{ */
+
     /**
      * Set new password key for user.
      * This key can be used for authentication when resetting user's password.

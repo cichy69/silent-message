@@ -1,18 +1,18 @@
 <?php if (!defined('BASEPATH')) exit('No direct script access allowed');
 
-if(!class_exists('PasswordHash'))
-{
+if (!class_exists('PasswordHash')) {
     require_once("phpass-0.3/PasswordHash.php");
 }
 
-if (!defined('STATUS_ACTIVATED'))     define('STATUS_ACTIVATED', '1');
+if (!defined('STATUS_ACTIVATED')) define('STATUS_ACTIVATED', '1');
 if (!defined('STATUS_NOT_ACTIVATED')) define('STATUS_NOT_ACTIVATED', '0');
 
-class Dashboard_model extends CI_Model {
+class Dashboard_model extends CI_Model
+{
 
-    private $table_name         = 'users';            // user accounts
+    private $table_name = 'users';            // user accounts
     private $attemps_table_name = 'login_attemps';    // user profiles
-    private $error              = array();
+    private $error = array();
 
     function __construct()
     {
@@ -20,8 +20,8 @@ class Dashboard_model extends CI_Model {
 
         $ci =& get_instance();
 
-        $this->table_name            = $ci->config->item('db_table_prefix').$this->table_name;
-        $this->attemps_table_name    = $ci->config->item('db_table_prefix').$this->attemps_table_name;
+        $this->table_name = $ci->config->item('db_table_prefix') . $this->table_name;
+        $this->attemps_table_name = $ci->config->item('db_table_prefix') . $this->attemps_table_name;
 
 
     }
@@ -39,13 +39,12 @@ class Dashboard_model extends CI_Model {
     {
         $user_id = $this->session->userdata('user_id');
 
-        if (!is_null($user = $this->get_user_by_id($user_id, TRUE)))
-        {
+        if (!is_null($user = $this->get_user_by_id($user_id, TRUE))) {
 
             // Check if old password correct
             $hasher = new PasswordHash(
-                                        $this->config->item('phpass_hash_strength'),
-                                        $this->config->item('phpass_hash_portable'));
+                $this->config->item('phpass_hash_strength'),
+                $this->config->item('phpass_hash_portable'));
 
             if ($hasher->CheckPassword($old_pass, $user->password)) {            // success
 
@@ -57,14 +56,37 @@ class Dashboard_model extends CI_Model {
                 return TRUE;
 
             } else {                                                            // fail
-                     $this->error = array('old_password' => 'auth_incorrect_password');
-                   }
+                $this->error = array('old_password' => 'auth_incorrect_password');
+            }
         }
         return FALSE;
     }
     /* }}} */
 
     /* public change_password_do($user_id, $new_pass) {{{ */
+
+    /**
+     * Get user record by Id
+     * get_user_by_id
+     *
+     * @param mixed $user_id
+     * @param mixed $activated
+     * @access public
+     * @return object
+     */
+    function get_user_by_id($user_id, $activated)
+    {
+        $this->db->where('id', $user_id);
+        $this->db->where('activated', $activated ? 1 : 0);
+
+        $query = $this->db->get($this->table_name);
+        if ($query->num_rows() == 1) return $query->row();
+        return NULL;
+    }
+    /* }}} */
+
+    /* public get_error_message() {{{ */
+
     /**
      * Database related part of changing password method.
      *
@@ -83,7 +105,8 @@ class Dashboard_model extends CI_Model {
     }
     /* }}} */
 
-    /* public get_error_message() {{{ */
+    /* public activate_new_email($user_id, $new_email_key) {{{ */
+
     /**
      * Can be invoked after any failed operation on database. Simply return private array of errors.
      *
@@ -96,7 +119,8 @@ class Dashboard_model extends CI_Model {
     }
     /* }}} */
 
-    /* public activate_new_email($user_id, $new_email_key) {{{ */
+    /* public activate_new_email_do($user_id, $new_email_key) {{{ */
+
     /**
      * Activate new email (replace old email with new one) if activation key is valid.
      *
@@ -118,7 +142,8 @@ class Dashboard_model extends CI_Model {
     }
     /* }}} */
 
-    /* public activate_new_email_do($user_id, $new_email_key) {{{ */
+    /* public set_new_email($new_email, $password) {{{ */
+
     /**
      * Activate new email (replace old email with new one) if activation key is valid.
      * Database releated part.
@@ -142,7 +167,8 @@ class Dashboard_model extends CI_Model {
     }
     /* }}} */
 
-    /* public set_new_email($new_email, $password) {{{ */
+    /* public is_email_available($email) {{{ */
+
     /**
      * Change user email (only when user is logged in) and return some data about user:
      * user_id, username, new_email, new_email_key.
@@ -161,14 +187,14 @@ class Dashboard_model extends CI_Model {
 
             // Check if password correct
             $hasher = new PasswordHash(
-                    $this->config->item('phpass_hash_strength'),
-                    $this->config->item('phpass_hash_portable'));
+                $this->config->item('phpass_hash_strength'),
+                $this->config->item('phpass_hash_portable'));
             if ($hasher->CheckPassword($password, $user->password)) {            // success
 
                 $data = array(
-                    'user_id'    => $user_id,
-                    'username'    => $user->username,
-                    'new_email'    => $new_email,
+                    'user_id' => $user_id,
+                    'username' => $user->username,
+                    'new_email' => $new_email,
                 );
 
                 if ($user->email == $new_email) {
@@ -179,7 +205,7 @@ class Dashboard_model extends CI_Model {
                     return $data;
 
                 } elseif ($this->is_email_available($new_email)) {
-                    $data['new_email_key'] = md5(rand().microtime());
+                    $data['new_email_key'] = md5(rand() . microtime());
                     $this->set_new_email_do($user_id, $new_email, $data['new_email_key'], TRUE);
                     return $data;
 
@@ -194,7 +220,8 @@ class Dashboard_model extends CI_Model {
     }
     /* }}} */
 
-    /* public is_email_available($email) {{{ */
+    /* public set_new_email($user_id, $new_email, $new_email_key, $activated) {{{ */
+
     /**
      * Check if email available for change
      *
@@ -213,7 +240,9 @@ class Dashboard_model extends CI_Model {
     }
     /* }}} */
 
-    /* public set_new_email($user_id, $new_email, $new_email_key, $activated) {{{ */
+
+    /* public get_user_by_id($user_id, $activated) {{{ */
+
     /**
      * Set new email for user (may be activated or not).
      * The new email cannot be used for login or notification before it is activated.
@@ -237,29 +266,8 @@ class Dashboard_model extends CI_Model {
     }
     /* }}} */
 
-
-    /* public get_user_by_id($user_id, $activated) {{{ */
-    /**
-     * Get user record by Id
-     * get_user_by_id
-     *
-     * @param mixed $user_id
-     * @param mixed $activated
-     * @access public
-     * @return object
-     */
-    function get_user_by_id($user_id, $activated)
-    {
-        $this->db->where('id', $user_id);
-        $this->db->where('activated', $activated ? 1 : 0);
-
-        $query = $this->db->get($this->table_name);
-        if ($query->num_rows() == 1) return $query->row();
-        return NULL;
-    }
-    /* }}} */
-
     /* public fetch_ids($recipments) {{{ */
+
     /**
      * Fetch ids from database for given array of usernames.
      *
@@ -271,31 +279,28 @@ class Dashboard_model extends CI_Model {
     {
         $this->load->helper('security');
 
-        foreach($recipments as &$recipment)
-        {
+        foreach ($recipments as &$recipment) {
             $this->db->escape($recipment);
         }
 
         $this->db->select('`id`, `username`');
         $this->db->from($this->table_name);
-        $this->db->where_in('`username`',$recipments);
+        $this->db->where_in('`username`', $recipments);
 
         $query = $this->db->get();
 
         $result = array();
 
-        if ($query->num_rows() > 0)
-        {
-            foreach($query->result_array() as $row)
-            {
+        if ($query->num_rows() > 0) {
+            foreach ($query->result_array() as $row) {
                 $result[$row['username']] = $row['id'];
             }
 
             return $result;
 
         } else {
-                    return array();
-               }
+            return array();
+        }
 
     }
     /* }}} */
@@ -312,19 +317,18 @@ class Dashboard_model extends CI_Model {
     {
         $this->db->select('`conversations`.`conversation_subject`');
         $this->db->from('`conversations`');
-        $this->db->where('`conversations`.`conversation_id`',$safe_id);
+        $this->db->where('`conversations`.`conversation_id`', $safe_id);
         $this->db->limit(1);
 
         $result = $this->db->get();
 
-        if ($result->num_rows() > 0)
-        {
+        if ($result->num_rows() > 0) {
 
             return $result->row_array();
 
         } else {
-                    return FALSE;
-               }
+            return FALSE;
+        }
 
     }
     /* }}} */
@@ -343,19 +347,92 @@ class Dashboard_model extends CI_Model {
 
         $result = $this->db->get();
 
-        if ($result->num_rows() > 0)
-        {
+        if ($result->num_rows() > 0) {
 
             return $result;
 
         } else {
-                    return NULL;
-               }
+            return NULL;
+        }
 
     }
     /* }}} */
 
     /* public validate_message($safe_id) {{{ */
+
+    /**
+     * Validate user and delete message from inbox.
+     * If all recipments of message deleted conversation,
+     * this function delete records from tables to clenup database.
+     *
+     * @param mixed $safe_id
+     * @access public
+     * @return bool
+     */
+    function validate_and_delete($safe_id)
+    {
+        $this->db->trans_start();
+        if ($this->validate_message($safe_id)) { //user is memeber od conversation
+
+            //fetch other users message status, distinct to lower numbers of data in big conversation
+            $this->db->distinct();
+            $this->db->select('`conversation_deleted`');
+            $this->db->from('`conversations_members`');
+            $this->db->where('user_id !=', $this->session->userdata('user_id'));
+            $this->db->where('conversation_id', $safe_id);
+
+            $result = $this->db->get();
+
+            if ($result->num_rows() == 1 && $result->row_array() == 1) { //everybody except user deleted conversation, so remove entry from database
+                $this->db->delete('conversations', array('conversation_id' => $safe_id));
+                $this->db->delete('conversations_memebers', array('conversation_id' => $safe_id));
+                $this->db->delete('conversations_messages', array('conversation_id' => $safe_id));
+
+                $this->db->trans_complete();
+
+                if ($this->db->trans_status() === FALSE) {
+
+                    return FALSE;
+
+                } else {
+
+                    return TRUE;
+                }
+
+            } else { //still active users, mark given message as deleted for logged user
+                $data = array(
+                    'conversation_deleted' => 1
+                );
+
+                $this->db->where('conversation_id', $safe_id);
+                $this->db->where('user_id', $this->session->userdata('user_id'));
+                $this->db->update('conversations_members', $data);
+
+                $this->db->trans_complete();
+
+                if ($this->db->trans_status() === FALSE) {
+
+                    return FALSE;
+
+                } else {
+
+                    return TRUE;
+                }
+
+
+            }
+
+
+        } else {//stop transaction and return false, user is not member of given conversation
+            $this->db->trans_complete();
+            return FALSE;
+        }
+
+    }
+    /* }}} */
+
+    /* public validate_and_delete($safe_id) {{{ */
+
     /**
      * Check if user is part of given conversation (ID param), so we can redirect users
      * who try to access or delete other users messages.
@@ -369,99 +446,24 @@ class Dashboard_model extends CI_Model {
         //check if user is part of given conversation
         $this->db->select('COUNT(1)');
         $this->db->from('`conversations_members`');
-        $this->db->where('conversation_id',$safe_id);
+        $this->db->where('conversation_id', $safe_id);
         $this->db->where('user_id', $this->session->userdata('user_id'));
-        $this->db->where('conversation_deleted',0);
+        $this->db->where('conversation_deleted', 0);
 
         $query = $this->db->get();
-        $num   = $query->result_array();
+        $num = $query->result_array();
 
-        if($num[0]['COUNT(1)'])
-        {
+        if ($num[0]['COUNT(1)']) {
             return TRUE;
 
-        } return FALSE;
-
-    }
-    /* }}} */
-
-    /* public validate_and_delete($safe_id) {{{ */
-    /**
-     * Validate user and delete message from inbox.
-     * If all recipments of message deleted conversation,
-     * this function delete records from tables to clenup database.
-     *
-     * @param mixed $safe_id
-     * @access public
-     * @return bool
-     */
-    function validate_and_delete($safe_id)
-    {
-        $this->db->trans_start();
-        if($this->validate_message($safe_id))
-        { //user is memeber od conversation
-
-            //fetch other users message status, distinct to lower numbers of data in big conversation
-            $this->db->distinct();
-            $this->db->select('`conversation_deleted`');
-            $this->db->from('`conversations_members`');
-            $this->db->where('user_id !=',$this->session->userdata('user_id'));
-            $this->db->where('conversation_id',$safe_id);
-
-            $result = $this->db->get();
-
-            if($result->num_rows() == 1 && $result->row_array() == 1)
-            { //everybody except user deleted conversation, so remove entry from database
-                $this->db->delete('conversations', array('conversation_id' => $safe_id));
-                $this->db->delete('conversations_memebers', array('conversation_id' => $safe_id));
-                $this->db->delete('conversations_messages', array('conversation_id' => $safe_id));
-
-                $this->db->trans_complete();
-
-                        if ($this->db->trans_status() === FALSE)
-                        {
-
-                           return FALSE;
-
-                        } else {
-
-                                   return TRUE;
-                               }
-
-            } else { //still active users, mark given message as deleted for logged user
-                        $data = array(
-                                       'conversation_deleted' => 1
-                                     );
-
-                        $this->db->where('conversation_id', $safe_id);
-                        $this->db->where('user_id', $this->session->userdata('user_id'));
-                        $this->db->update('conversations_members', $data);
-
-                        $this->db->trans_complete();
-
-                        if ($this->db->trans_status() === FALSE)
-                        {
-
-                           return FALSE;
-
-                        } else {
-
-                                   return TRUE;
-                               }
-
-
-                   }
-
-
-        } else {//stop transaction and return false, user is not member of given conversation
-                $this->db->trans_complete();
-                return FALSE;
-               }
+        }
+        return FALSE;
 
     }
     /* }}} */
 
     /* public create_conversation($ids, $subject, $text) {{{ */
+
     /**
      * Create conversation:
      * add recipments to table
@@ -478,60 +480,58 @@ class Dashboard_model extends CI_Model {
     {
         $this->load->helper('date');
 
-        $safe_subject = $this->db->escape(htmlentities($subject,ENT_COMPAT,'UTF-8'));
-        $safe_text    = $this->db->escape(htmlentities($text,ENT_COMPAT,'UTF-8'));
+        $safe_subject = $this->db->escape(htmlentities($subject, ENT_COMPAT, 'UTF-8'));
+        $safe_text = $this->db->escape(htmlentities($text, ENT_COMPAT, 'UTF-8'));
 
         $this->db->trans_start(); //transaction start
 
-            //create entry in conversations table
-            $data = array(
-                           'conversation_subject' => $safe_subject
-                         );
-            $this->db->insert('conversations', $data);
+        //create entry in conversations table
+        $data = array(
+            'conversation_subject' => $safe_subject
+        );
+        $this->db->insert('conversations', $data);
 
-            //fetch last conversation id
-            $conversation_id = $this->db->insert_id();
+        //fetch last conversation id
+        $conversation_id = $this->db->insert_id();
 
-            //create entry in conversations_messeage table
-            $data2 = array(
-                            'conversation_id' => $conversation_id,
-                            'user_id'         => $this->session->userdata('user_id'),
-                            'message_date'    => now(),
-                            'message_text'    => $safe_text,
-                            'message_attachment_id' => 0
-                          );
-            $this->db->insert('conversations_messages', $data2);
+        //create entry in conversations_messeage table
+        $data2 = array(
+            'conversation_id' => $conversation_id,
+            'user_id' => $this->session->userdata('user_id'),
+            'message_date' => now(),
+            'message_text' => $safe_text,
+            'message_attachment_id' => 0
+        );
+        $this->db->insert('conversations_messages', $data2);
 
-            //add current user to user list
-            $ids[] = $this->session->userdata('user_id');
+        //add current user to user list
+        $ids[] = $this->session->userdata('user_id');
 
-            //create VALUE part of query, insted of running multiple query, create single
-            $values = array();
+        //create VALUE part of query, insted of running multiple query, create single
+        $values = array();
 
-            foreach($ids as $id)
-            {
-                $id = (int) $id;
+        foreach ($ids as $id) {
+            $id = (int)$id;
 
-                $values[] = "({$conversation_id}, {$id}, 0, 0)";
-            }
+            $values[] = "({$conversation_id}, {$id}, 0, 0)";
+        }
 
-            //create entrys in conversations_members. CI activeRecord don't support multiple VALUES in insert(), so we just run query
-            $this->db->query("INSERT INTO `conversations_members` (`conversation_id`, `user_id`, `conversation_last_view`, `conversation_deleted`)
-                              VALUES " . implode(', ',$values));
+        //create entrys in conversations_members. CI activeRecord don't support multiple VALUES in insert(), so we just run query
+        $this->db->query("INSERT INTO `conversations_members` (`conversation_id`, `user_id`, `conversation_last_view`, `conversation_deleted`)
+                              VALUES " . implode(', ', $values));
 
 
         $this->db->trans_complete(); //transaction
 
-        if ($this->db->trans_status() === FALSE)
-        {
+        if ($this->db->trans_status() === FALSE) {
 
             return FALSE;
 
         } else {
 
-                    return TRUE;
+            return TRUE;
 
-               }
+        }
     }
     /* }}} */
 
@@ -544,18 +544,18 @@ class Dashboard_model extends CI_Model {
      * @access public
      * @return void
      */
-    function add_message_to_conversation($safe_id,$message)
+    function add_message_to_conversation($safe_id, $message)
     {
         $this->load->helper('date');
 
-        $safe_message = $this->db->escape(htmlentities($message,ENT_COMPAT,'UTF-8'));
+        $safe_message = $this->db->escape(htmlentities($message, ENT_COMPAT, 'UTF-8'));
 
         $data = array(
-                        'conversation_id' => $safe_id,
-                        'user_id'         => $this->session->userdata('user_id'),
-                        'message_date'    => now(),
-                        'message_text'    => $safe_message
-                     );
+            'conversation_id' => $safe_id,
+            'user_id' => $this->session->userdata('user_id'),
+            'message_date' => now(),
+            'message_text' => $safe_message
+        );
 
         $this->db->insert('conversations_messages', $data);
     }
@@ -570,7 +570,7 @@ class Dashboard_model extends CI_Model {
      * @access public
      * @return object (bool on failed)
      */
-    function fetch_user_conversation($user_id,$sort)
+    function fetch_user_conversation($user_id, $sort)
     {
         $this->db->select('`conversations`.`conversation_id`');
         $this->db->select('`conversations`.`conversation_subject`');
@@ -587,28 +587,25 @@ class Dashboard_model extends CI_Model {
 
         $this->db->group_by('`conversations`.`conversation_id`');
 
-        if($sort === "by_date")
-        {
-            $this->db->order_by('`conversation_last_reply`',"desc");
+        if ($sort === "by_date") {
+            $this->db->order_by('`conversation_last_reply`', "desc");
 
-              } elseif ($sort === "by_topic")
-                    {
+        } elseif ($sort === "by_topic") {
 
-                        $this->db->order_by('`conversation_subject`',"desc");
+            $this->db->order_by('`conversation_subject`', "desc");
 
-                    } else {
-                                $this->db->order_by('`conversation_last_reply`',"desc");
-                           }
+        } else {
+            $this->db->order_by('`conversation_last_reply`', "desc");
+        }
 
         $query = $this->db->get();
 
-        if ($query->num_rows() > 0)
-        {
+        if ($query->num_rows() > 0) {
             return $query;
 
         } else {
-                    return FALSE;
-               }
+            return FALSE;
+        }
 
 
     }
@@ -631,24 +628,23 @@ class Dashboard_model extends CI_Model {
 
         $this->db->from('conversations_messages');
 
-        $this->db->join('`users`', 'conversations_messages.user_id = users.id','inner');
-        $this->db->join('`conversations_members`', 'conversations_messages.conversation_id = conversations_members.conversation_id','inner');
+        $this->db->join('`users`', 'conversations_messages.user_id = users.id', 'inner');
+        $this->db->join('`conversations_members`', 'conversations_messages.conversation_id = conversations_members.conversation_id', 'inner');
 
         $this->db->where('`conversations_messages`.`conversation_id`', $conversation_id);
         $this->db->where('`conversations_members`.`user_id`', $this->session->userdata('user_id'));
 
-        $this->db->order_by('`conversations_messages`.`message_date`',"desc");
+        $this->db->order_by('`conversations_messages`.`message_date`', "desc");
 
         $result = $this->db->get();
 
-        if ($result->num_rows() > 0)
-        {
+        if ($result->num_rows() > 0) {
 
             return $result;
 
         } else {
-                    return FALSE;
-               }
+            return FALSE;
+        }
 
     }
     /* }}} */
@@ -666,8 +662,8 @@ class Dashboard_model extends CI_Model {
         $this->load->helper('date');
 
         $data = array(
-                       'conversation_last_view' => now()
-                     );
+            'conversation_last_view' => now()
+        );
 
         $this->db->where('conversation_id', $safe_id);
         $this->db->where('user_id', $this->session->userdata('user_id'));
@@ -676,6 +672,6 @@ class Dashboard_model extends CI_Model {
     }
     /* }}} */
 
- }
+}
 /* End of file Dashboard_model.php */
 /* Location: ./application/modules/system/models/dashboard_model.php */

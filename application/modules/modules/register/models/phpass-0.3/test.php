@@ -65,8 +65,8 @@ if (!$check) $ok++;
 print "Check wrong: '" . $check . "' (should be '0' or '')\n";
 
 if ($ok == 6)
-	print "All tests have PASSED\n";
+    print "All tests have PASSED\n";
 else
-	print "Some tests have FAILED\n";
+    print "Some tests have FAILED\n";
 
 ?>

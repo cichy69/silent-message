@@ -76,6 +76,46 @@ class Account_model extends CI_Model
     /* }}} */
 
     /* public crud_account_create($data, $activated = TRUE) {{{ */
+
+    /**
+     * Check if username available for registering.
+     *
+     * @param mixed $username
+     * @access public
+     * @return bool
+     */
+    public function is_username_available($username)
+    {
+        $this->db->select('1', FALSE);
+        $this->db->where('LOWER(username)=', strtolower($username));
+
+        $query = $this->db->get($this->table_name);
+        return $query->num_rows() == 0;
+    }
+    /* }}} */
+
+    /* private crud_profile_create($user_id) {{{ */
+
+    /**
+     * Check if email available for registering.
+     *
+     * @param mixed $email
+     * @access public
+     * @return bool
+     */
+    public function is_email_available($email)
+    {
+        $this->db->select('1', FALSE);
+        $this->db->where('LOWER(email)=', strtolower($email));
+        $this->db->or_where('LOWER(new_email)=', strtolower($email));
+
+        $query = $this->db->get($this->table_name);
+        return $query->num_rows() == 0;
+    }
+    /* }}} */
+
+    /* private crud_profile_create($user_id) {{{ */
+
     /**
      * Create new user record
      * Using Codeigniter builtin transactions support.
@@ -105,7 +145,8 @@ class Account_model extends CI_Model
     }
     /* }}} */
 
-    /* private crud_profile_create($user_id) {{{ */
+    /* public is_username_available($username) {{{ */
+
     /**
      * Create an empty profile for a new user
      *
@@ -120,59 +161,8 @@ class Account_model extends CI_Model
     }
     /* }}} */
 
-    /* private crud_profile_create($user_id) {{{ */
-    /**
-     * Delete user profile
-     *
-     * @param mixed $user_id
-     * @access private
-     * @return void
-     */
-    private function crud_profile_delete($user_id)
-    {
-        $this->db->where('user_id', $user_id);
-        $this->db->delete($this->profile_table_name);
-    }
-    /* }}} */
-
-    /* public is_username_available($username) {{{ */
-    /**
-     * Check if username available for registering.
-     *
-     * @param mixed $username
-     * @access public
-     * @return bool
-     */
-    public function is_username_available($username)
-    {
-        $this->db->select('1', FALSE);
-        $this->db->where('LOWER(username)=', strtolower($username));
-
-        $query = $this->db->get($this->table_name);
-        return $query->num_rows() == 0;
-    }
-    /* }}} */
-
     /* public is_email_available($email) {{{ */
-    /**
-     * Check if email available for registering.
-     *
-     * @param mixed $email
-     * @access public
-     * @return bool
-     */
-    public function is_email_available($email)
-    {
-        $this->db->select('1', FALSE);
-        $this->db->where('LOWER(email)=', strtolower($email));
-        $this->db->or_where('LOWER(new_email)=', strtolower($email));
 
-        $query = $this->db->get($this->table_name);
-        return $query->num_rows() == 0;
-    }
-    /* }}} */
-
-    /* public get_error_message() {{{ */
     /**
      * Can be invoked after any failed operation such as login or register.
      *
@@ -185,7 +175,8 @@ class Account_model extends CI_Model
     }
     /* }}} */
 
-    /* public activate_user($user_id, $activation_key, $activate_by_email) {{{ */
+    /* public get_error_message() {{{ */
+
     /**
      * Activate user if activation key is valid.
      * Can be called for not activated users only.
@@ -228,7 +219,8 @@ class Account_model extends CI_Model
     }
     /* }}} */
 
-    /* public logout() {{{ */
+    /* public activate_user($user_id, $activation_key, $activate_by_email) {{{ */
+
     /**
      * Logout user from the site
      *
@@ -246,7 +238,8 @@ class Account_model extends CI_Model
     }
     /* }}} */
 
-    /* private delete_autologin() {{{ */
+    /* public logout() {{{ */
+
     /**
      * Clear user's autologin data
      *
@@ -269,7 +262,8 @@ class Account_model extends CI_Model
     }
     /* }}} */
 
-    /* public change_email($email) {{{ */
+    /* private delete_autologin() {{{ */
+
     /**
      * Change email for activation and return some data about user:
      * user_id, username, email, new_email_key.
@@ -308,7 +302,8 @@ class Account_model extends CI_Model
     }
     /* }}} */
 
-    /* public get_user_by_id($user_id, $activated) {{{ */
+    /* public change_email($email) {{{ */
+
     /**
      * Get user record by Id
      * get_user_by_id
@@ -329,7 +324,8 @@ class Account_model extends CI_Model
     }
     /* }}} */
 
-    /* public set_new_email($user_id, $new_email, $new_email_key, $activated) {{{ */
+    /* public get_user_by_id($user_id, $activated) {{{ */
+
     /**
      * Set new email for user (may be activated or not).
      * The new email cannot be used for login or notification before it is activated.
@@ -351,6 +347,22 @@ class Account_model extends CI_Model
 
         $this->db->update($this->table_name);
         return $this->db->affected_rows() > 0;
+    }
+    /* }}} */
+
+    /* public set_new_email($user_id, $new_email, $new_email_key, $activated) {{{ */
+
+    /**
+     * Delete user profile
+     *
+     * @param mixed $user_id
+     * @access private
+     * @return void
+     */
+    private function crud_profile_delete($user_id)
+    {
+        $this->db->where('user_id', $user_id);
+        $this->db->delete($this->profile_table_name);
     }
     /* }}} */
 }

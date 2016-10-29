@@ -7,7 +7,7 @@ Follow this link to login on the site:
 
 <?php if (strlen($username) > 0) { ?>
 
-Your username: <?php echo $username; ?>
+    Your username: <?php echo $username; ?>
 <?php } ?>
 
 Your email address: <?php echo $email; ?>

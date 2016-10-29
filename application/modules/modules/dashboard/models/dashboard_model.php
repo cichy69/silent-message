@@ -64,6 +64,28 @@ class Dashboard_model extends CI_Model
     /* }}} */
 
     /* public change_password_do($user_id, $new_pass) {{{ */
+
+    /**
+     * Get user record by Id
+     * get_user_by_id
+     *
+     * @param mixed $user_id
+     * @param mixed $activated
+     * @access public
+     * @return object
+     */
+    public function get_user_by_id($user_id, $activated)
+    {
+        $this->db->where('id', $user_id);
+        $this->db->where('activated', $activated ? 1 : 0);
+
+        $query = $this->db->get($this->table_name);
+        if ($query->num_rows() == 1) return $query->row();
+        return NULL;
+    }
+
+    /* }}} */
+
     /**
      * Change user password
      *
@@ -80,8 +102,6 @@ class Dashboard_model extends CI_Model
         $this->db->update($this->table_name);
         return $this->db->affected_rows() > 0;
     }
-
-    /* }}} */
 
     public function fetch_ids($recipments)
     {
@@ -209,26 +229,6 @@ class Dashboard_model extends CI_Model
 
     }
 
-    public function validate_message($safe_id)
-    {
-        //check if user is part of given conversation
-        $this->db->select('COUNT(1)');
-        $this->db->from('`conversations_members`');
-        $this->db->where('conversation_id', $safe_id);
-        $this->db->where('user_id', $this->session->userdata('user_id'));
-        $this->db->where('conversation_deleted', 0);
-
-        $query = $this->db->get();
-        $num = $query->result_array();
-
-        if ($num[0]['COUNT(1)']) {
-            return TRUE;
-
-        }
-        return FALSE;
-
-    }
-
     public function validate_and_delete($safe_id)
     {
         $this->db->trans_start();
@@ -290,6 +290,26 @@ class Dashboard_model extends CI_Model
 
     }
 
+    public function validate_message($safe_id)
+    {
+        //check if user is part of given conversation
+        $this->db->select('COUNT(1)');
+        $this->db->from('`conversations_members`');
+        $this->db->where('conversation_id', $safe_id);
+        $this->db->where('user_id', $this->session->userdata('user_id'));
+        $this->db->where('conversation_deleted', 0);
+
+        $query = $this->db->get();
+        $num = $query->result_array();
+
+        if ($num[0]['COUNT(1)']) {
+            return TRUE;
+
+        }
+        return FALSE;
+
+    }
+
     public function fetch_user_conversation($user_id)
     {
         $this->db->select('`conversations`.`conversation_id`');
@@ -321,6 +341,7 @@ class Dashboard_model extends CI_Model
 
     }
 
+    /* public get_error_message() {{{ */
 
     public function create_conversation($ids, $subject, $text)
     {
@@ -378,8 +399,11 @@ class Dashboard_model extends CI_Model
 
         }
     }
+    /* }}} */
 
-    /* public get_error_message() {{{ */
+
+    /* public get_user_by_id($user_id, $activated) {{{ */
+
     /**
      * Can be invoked after any failed operation such as login or register.
      *
@@ -392,29 +416,8 @@ class Dashboard_model extends CI_Model
     }
     /* }}} */
 
-
-    /* public get_user_by_id($user_id, $activated) {{{ */
-    /**
-     * Get user record by Id
-     * get_user_by_id
-     *
-     * @param mixed $user_id
-     * @param mixed $activated
-     * @access public
-     * @return object
-     */
-    public function get_user_by_id($user_id, $activated)
-    {
-        $this->db->where('id', $user_id);
-        $this->db->where('activated', $activated ? 1 : 0);
-
-        $query = $this->db->get($this->table_name);
-        if ($query->num_rows() == 1) return $query->row();
-        return NULL;
-    }
-    /* }}} */
-
     /* public activate_new_email($user_id, $new_email_key) {{{ */
+
     /**
      * Activate new email (replace old email with new one) if activation key is valid.
      *

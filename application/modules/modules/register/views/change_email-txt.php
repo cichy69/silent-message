@@ -1,9 +1,9 @@
-Hi<?php if (strlen($username) > 0) { ?> <?php echo $username; ?><?php } ?>,
+Hi<?php if (strlen($username) > 0) { ?><?php echo $username; ?><?php } ?>,
 
 You have changed your email address for <?php echo $site_name; ?>.
 Follow this link to confirm your new email address:
 
-<?php echo site_url('/auth/reset_email/'.$user_id.'/'.$new_email_key); ?>
+<?php echo site_url('/auth/reset_email/' . $user_id . '/' . $new_email_key); ?>
 
 
 Your new email: <?php echo $new_email; ?>

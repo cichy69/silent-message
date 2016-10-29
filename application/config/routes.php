@@ -1,4 +1,4 @@
-<?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+<?php if (!defined('BASEPATH')) exit('No direct script access allowed');
 /*
 | -------------------------------------------------------------------------
 | URI ROUTING
@@ -39,8 +39,8 @@
 */
 
 $route['default_controller'] = "login";
-$route['404_override']       = '';
-$route['system/cp']          = 'system';
+$route['404_override'] = '';
+$route['system/cp'] = 'system';
 
 /* End of file routes.php */
 /* Location: ./application/config/routes.php */

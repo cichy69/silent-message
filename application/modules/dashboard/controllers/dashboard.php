@@ -106,6 +106,19 @@ class Dashboard extends MX_Controller
     }
 
     /**
+     * Show info message
+     *
+     * @param mixed $message
+     * @access protected
+     * @return void
+     */
+    protected function _show_message($message)
+    {
+        $this->session->set_flashdata('message', $message);
+        redirect('/dashboard/message');
+    }
+
+    /**
      * Control Panel widget, fetch by HMVC call.
      *
      * @access public
@@ -169,6 +182,27 @@ class Dashboard extends MX_Controller
         $this->load->view('frontend/head');
         $this->load->view('dashboard/change_email_form', $data);
         $this->load->view('frontend/footer');
+    }
+
+    /**
+     * Send email message of given type (activate, forgot_password, etc.)
+     *
+     * @param mixed $type
+     * @param mixed $email
+     * @param mixed $data
+     * @access protected
+     * @return void
+     */
+    protected function _send_email($type, $email, &$data)
+    {
+        $this->load->library('email');
+        $this->email->from($this->config->item('webmaster_email'), $this->config->item('website_name'));
+        $this->email->reply_to($this->config->item('webmaster_email'), $this->config->item('website_name'));
+        $this->email->to($email);
+        $this->email->subject(sprintf($this->lang->line('auth_subject_' . $type), $this->config->item('website_name')));
+        $this->email->message($this->load->view('' . $type . '-html', $data, TRUE));
+        $this->email->set_alt_message($this->load->view('' . $type . '-txt', $data, TRUE));
+        $this->email->send();
     }
 
     /**
@@ -364,39 +398,5 @@ class Dashboard extends MX_Controller
         } else {
             $this->inbox();
         }
-    }
-
-    /**
-     * Show info message
-     *
-     * @param mixed $message
-     * @access protected
-     * @return void
-     */
-    protected function _show_message($message)
-    {
-        $this->session->set_flashdata('message', $message);
-        redirect('/dashboard/message');
-    }
-
-    /**
-     * Send email message of given type (activate, forgot_password, etc.)
-     *
-     * @param mixed $type
-     * @param mixed $email
-     * @param mixed $data
-     * @access protected
-     * @return void
-     */
-    protected function _send_email($type, $email, &$data)
-    {
-        $this->load->library('email');
-        $this->email->from($this->config->item('webmaster_email'), $this->config->item('website_name'));
-        $this->email->reply_to($this->config->item('webmaster_email'), $this->config->item('website_name'));
-        $this->email->to($email);
-        $this->email->subject(sprintf($this->lang->line('auth_subject_' . $type), $this->config->item('website_name')));
-        $this->email->message($this->load->view('' . $type . '-html', $data, TRUE));
-        $this->email->set_alt_message($this->load->view('' . $type . '-txt', $data, TRUE));
-        $this->email->send();
     }
 }

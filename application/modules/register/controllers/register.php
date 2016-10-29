@@ -139,41 +139,7 @@ class Register extends MX_Controller
     //}
 
     /* public message() {{{ */
-    /**
-     * Show registration message to user.
-     *
-     * @access public
-     * @return void
-     */
-    public function message()
-    {
-        if ($this->session->flashdata('message') != "") {
-            $this->load->view('frontend/head');
-            $this->load->view('register/register_success');
-            $this->load->view('frontend/footer');
 
-        } else {
-            $this->create_account();
-        }
-    }
-    /* }}} */
-
-    /* protected _show_message($message) {{{ */
-    /**
-     * Show info message
-     *
-     * @param mixed $message
-     * @access protected
-     * @return void
-     */
-    private function _show_message($message)
-    {
-        $this->session->set_flashdata('message', $message);
-        redirect('/register/message');
-    }
-    /* }}} */
-
-    /* protected _send_email($type, $email, &$data) {{{ */
     /**
      * Send email message of given type (activate, forgot_password, etc.)
      *
@@ -196,33 +162,46 @@ class Register extends MX_Controller
     }
     /* }}} */
 
-    /* public activate() {{{ */
+    /* protected _show_message($message) {{{ */
+
     /**
-     * Activate user account.
-     * User is verified by user_id and authentication code in the URL.
-     * Can be called by clicking on link in mail.
+     * Show info message
      *
-     * @access public
+     * @param mixed $message
+     * @access protected
      * @return void
      */
-    public function activate()
+    private function _show_message($message)
     {
-        $user_id = $this->uri->segment(3);
-        $new_email_key = $this->uri->segment(4);
-
-        // Activate user
-        if ($this->account_model->activate_user($user_id, $new_email_key))                      //success
-        {
-            $this->account_model->logout();
-            $this->_show_message($this->lang->line('auth_message_activation_completed') . ' ' . anchor('/login/', 'Login'));
-
-        } else {                                                                                // fail
-            $this->_show_message($this->lang->line('auth_message_activation_failed'));
-        }
+        $this->session->set_flashdata('message', $message);
+        redirect('/register/message');
     }
     /* }}} */
 
-    /* private _create_captcha() {{{ */
+    /* protected _send_email($type, $email, &$data) {{{ */
+
+    /**
+     * Create reCAPTCHA JS and non-JS HTML to verify user as a human
+     *
+     * @access protected
+     * @return string
+     */
+    private function _create_recaptcha()
+    {
+        $this->load->helper('recaptcha');
+
+        // Add custom theme so we can get only image
+        $options = "<script type=\"text/javascript\">var RecaptchaOptions = {theme: 'custom', custom_theme_widget: 'recaptcha_widget'};</script>\n";
+
+        // Get reCAPTCHA JS and non-JS HTML
+        $html = recaptcha_get_html($this->config->item('recaptcha_public_key'));
+
+        return $options . $html;
+    }
+    /* }}} */
+
+    /* public activate() {{{ */
+
     /**
      * Create CAPTCHA image to verify user as a human
      *
@@ -254,7 +233,56 @@ class Register extends MX_Controller
     }
     /* }}} */
 
+    /* private _create_captcha() {{{ */
+
+    /**
+     * Show registration message to user.
+     *
+     * @access public
+     * @return void
+     */
+    public function message()
+    {
+        if ($this->session->flashdata('message') != "") {
+            $this->load->view('frontend/head');
+            $this->load->view('register/register_success');
+            $this->load->view('frontend/footer');
+
+        } else {
+            $this->create_account();
+        }
+    }
+    /* }}} */
+
     /* private _check_captcha($code) {{{ */
+
+    /**
+     * Activate user account.
+     * User is verified by user_id and authentication code in the URL.
+     * Can be called by clicking on link in mail.
+     *
+     * @access public
+     * @return void
+     */
+    public function activate()
+    {
+        $user_id = $this->uri->segment(3);
+        $new_email_key = $this->uri->segment(4);
+
+        // Activate user
+        if ($this->account_model->activate_user($user_id, $new_email_key))                      //success
+        {
+            $this->account_model->logout();
+            $this->_show_message($this->lang->line('auth_message_activation_completed') . ' ' . anchor('/login/', 'Login'));
+
+        } else {                                                                                // fail
+            $this->_show_message($this->lang->line('auth_message_activation_failed'));
+        }
+    }
+    /* }}} */
+
+    /* private _create_recaptcha() {{{ */
+
     /**
      * Callback function. Check if CAPTCHA test is passed.
      *
@@ -285,28 +313,8 @@ class Register extends MX_Controller
     }
     /* }}} */
 
-    /* private _create_recaptcha() {{{ */
-    /**
-     * Create reCAPTCHA JS and non-JS HTML to verify user as a human
-     *
-     * @access protected
-     * @return string
-     */
-    private function _create_recaptcha()
-    {
-        $this->load->helper('recaptcha');
-
-        // Add custom theme so we can get only image
-        $options = "<script type=\"text/javascript\">var RecaptchaOptions = {theme: 'custom', custom_theme_widget: 'recaptcha_widget'};</script>\n";
-
-        // Get reCAPTCHA JS and non-JS HTML
-        $html = recaptcha_get_html($this->config->item('recaptcha_public_key'));
-
-        return $options . $html;
-    }
-    /* }}} */
-
     /* protected _check_recaptcha() {{{ */
+
     /**
      * Callback function. Check if reCAPTCHA test is passed.
      *

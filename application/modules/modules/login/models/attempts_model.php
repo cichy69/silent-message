@@ -17,7 +17,7 @@ class Attempts_model extends CI_Model
         parent::__construct();
 
         $ci =& get_instance();
-        $this->table_name = $ci->config->item('db_table_prefix').$this->table_name;
+        $this->table_name = $ci->config->item('db_table_prefix') . $this->table_name;
     }
 
     /* public get_attempts_num($ip_address, $login) {{{ */

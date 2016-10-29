@@ -8,7 +8,7 @@ class Dashboard extends MX_Controller
     /**
      * Dashboard constructor.
      */
-    protected function __construct()
+    public function __construct()
     {
         parent::__construct();
 

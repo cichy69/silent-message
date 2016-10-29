@@ -497,7 +497,8 @@ class Dashboard_model extends CI_Model {
                             'conversation_id' => $conversation_id,
                             'user_id'         => $this->session->userdata('user_id'),
                             'message_date'    => now(),
-                            'message_text'    => $safe_text
+                            'message_text'    => $safe_text,
+                            'message_attachment_id' => 0
                           );
             $this->db->insert('conversations_messages', $data2);
 

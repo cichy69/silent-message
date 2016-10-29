@@ -14,7 +14,7 @@
 | path to your installation.
 |
 */
-$config['base_url']    = 'http://sm.mmswiderski.eu';
+$config['base_url']    = 'http://localhost:9999';
 
 /*
 |--------------------------------------------------------------------------

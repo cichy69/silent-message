@@ -1,27 +1,27 @@
 <?php if (!defined('BASEPATH')) exit('No direct script access allowed');
 
-if(!class_exists('PasswordHash'))
-{
+if (!class_exists('PasswordHash')) {
     require_once("phpass-0.3/PasswordHash.php");
 }
 
-if (!defined('STATUS_ACTIVATED'))     define('STATUS_ACTIVATED', '1');
+if (!defined('STATUS_ACTIVATED')) define('STATUS_ACTIVATED', '1');
 if (!defined('STATUS_NOT_ACTIVATED')) define('STATUS_NOT_ACTIVATED', '0');
 
-class Account_model extends CI_Model {
+class Account_model extends CI_Model
+{
 
-    private $table_name         = 'users';            // user accounts
+    private $table_name = 'users';            // user accounts
     private $profile_table_name = 'user_profiles';    // user profiles
-    private $error              = array();
+    private $error = array();
 
-    function __construct()
+    public function __construct()
     {
         parent::__construct();
 
         $ci =& get_instance();
 
-        $this->table_name            = $ci->config->item('db_table_prefix').$this->table_name;
-        $this->profile_table_name    = $ci->config->item('db_table_prefix').$this->profile_table_name;
+        $this->table_name = $ci->config->item('db_table_prefix') . $this->table_name;
+        $this->profile_table_name = $ci->config->item('db_table_prefix') . $this->profile_table_name;
     }
 
     /* public create_user($username, $email, $password, $email_activation) {{{ */
@@ -36,44 +36,40 @@ class Account_model extends CI_Model {
      * @access public
      * @return array
      */
-    function create_user($username, $email, $password, $email_activation)
+    public function create_user($username, $email, $password, $email_activation)
     {
-        if ((strlen($username) > 0) AND !$this->is_username_available($username))
-        {
+        if ((strlen($username) > 0) AND !$this->is_username_available($username)) {
             $this->error = array('username' => 'auth_username_in_use');
 
-        } elseif ((strlen($username) > 0) AND !$this->is_email_available($email))
-            {
-                    $this->error = array('email' => 'auth_email_in_use');
+        } elseif ((strlen($username) > 0) AND !$this->is_email_available($email)) {
+            $this->error = array('email' => 'auth_email_in_use');
 
-            } else {
-                    // Hash password using phpass
-                    $hasher = new   PasswordHash(
-                                                   $this->config->item('phpass_hash_strength')   ,
-                                                   $this->config->item('phpass_hash_portable')
-                                                );
-                    $hashed_password = $hasher->HashPassword($password);
+        } else {
+            // Hash password using phpass
+            $hasher = new   PasswordHash(
+                $this->config->item('phpass_hash_strength'),
+                $this->config->item('phpass_hash_portable')
+            );
+            $hashed_password = $hasher->HashPassword($password);
 
-                    $data = array(
-                                    'username'  => $username,
-                                    'password'  => $hashed_password,
-                                    'email'     => $email,
-                                    'last_ip'   => $this->input->ip_address(),
-                                 );
+            $data = array(
+                'username' => $username,
+                'password' => $hashed_password,
+                'email' => $email,
+                'last_ip' => $this->input->ip_address(),
+            );
 
-                    if ($email_activation)
-                    {
-                         $data['new_email_key'] = md5(rand().microtime());
-                    }
-
-                    if (!is_null($res = $this->crud_account_create($data, !$email_activation)))
-                    {
-                        $data['user_id']  = $res['user_id'];
-                        $data['password'] = $password;
-                        unset($data['last_ip']);
-                        return $data;
-                    }
+            if ($email_activation) {
+                $data['new_email_key'] = md5(rand() . microtime());
             }
+
+            if (!is_null($res = $this->crud_account_create($data, !$email_activation))) {
+                $data['user_id'] = $res['user_id'];
+                $data['password'] = $password;
+                unset($data['last_ip']);
+                return $data;
+            }
+        }
 
         return NULL;
     }
@@ -89,19 +85,19 @@ class Account_model extends CI_Model {
      * @access public
      * @return bool
      */
-    function crud_account_create($data, $activated = TRUE)
+    public function crud_account_create($data, $activated = TRUE)
     {
-        $data['created']   = date('Y-m-d H:i:s');
+        $data['created'] = date('Y-m-d H:i:s');
+        $data['last_login'] = date('1990-01-01 00:00:00');
         $data['activated'] = $activated ? 1 : 0;
 
         $this->db->trans_start(); //start transaction
-            if ($this->db->insert($this->table_name, $data))
-            {
-                $user_id = $this->db->insert_id();
-                if ($activated) $this->crud_profile_create($user_id);
-        $this->db->trans_complete(); //end transaction if IF is true
-                return array('user_id' => $user_id);
-            }
+        if ($this->db->insert($this->table_name, $data)) {
+            $user_id = $this->db->insert_id();
+            if ($activated) $this->crud_profile_create($user_id);
+            $this->db->trans_complete(); //end transaction if IF is true
+            return array('user_id' => $user_id);
+        }
 
         $this->db->trans_complete(); //finish transaction if IF is false
 
@@ -147,7 +143,7 @@ class Account_model extends CI_Model {
      * @access public
      * @return bool
      */
-    function is_username_available($username)
+    public function is_username_available($username)
     {
         $this->db->select('1', FALSE);
         $this->db->where('LOWER(username)=', strtolower($username));
@@ -165,7 +161,7 @@ class Account_model extends CI_Model {
      * @access public
      * @return bool
      */
-    function is_email_available($email)
+    public function is_email_available($email)
     {
         $this->db->select('1', FALSE);
         $this->db->where('LOWER(email)=', strtolower($email));
@@ -183,7 +179,7 @@ class Account_model extends CI_Model {
      * @access public
      * @return string
      */
-    function get_error_message()
+    public function get_error_message()
     {
         return $this->error;
     }
@@ -200,34 +196,32 @@ class Account_model extends CI_Model {
      * @access public
      * @return bool
      */
-    function activate_user($user_id, $activation_key, $activate_by_email=TRUE)
+    public function activate_user($user_id, $activation_key, $activate_by_email = TRUE)
     {
         $this->db->trans_start(); //transaction start
-            $this->db->select('1', FALSE);
+        $this->db->select('1', FALSE);
+        $this->db->where('id', $user_id);
+
+        if ($activate_by_email) {
+            $this->db->where('new_email_key', $activation_key);
+
+        } else {
+            $this->db->where('new_password_key', $activation_key);
+        }
+
+        $this->db->where('activated', 0);
+        $query = $this->db->get($this->table_name);
+
+        if ($query->num_rows() == 1) {
+            $this->db->set('activated', 1);
+            $this->db->set('new_email_key', NULL);
             $this->db->where('id', $user_id);
+            $this->db->update($this->table_name);
 
-                if ($activate_by_email)
-                {
-                    $this->db->where('new_email_key', $activation_key);
-
-                } else  {
-                            $this->db->where('new_password_key', $activation_key);
-                        }
-
-            $this->db->where('activated', 0);
-            $query = $this->db->get($this->table_name);
-
-            if ($query->num_rows() == 1)
-            {
-                $this->db->set('activated', 1);
-                $this->db->set('new_email_key', NULL);
-                $this->db->where('id', $user_id);
-                $this->db->update($this->table_name);
-
-                $this->crud_profile_create($user_id);
-        $this->db->trans_complete(); //transaction end - commit
-                return TRUE;
-            }
+            $this->crud_profile_create($user_id);
+            $this->db->trans_complete(); //transaction end - commit
+            return TRUE;
+        }
 
         $this->db->trans_complete(); //transaction end rollback
         return FALSE;
@@ -236,12 +230,12 @@ class Account_model extends CI_Model {
 
     /* public logout() {{{ */
     /**
-    * Logout user from the site
+     * Logout user from the site
      *
      * @access public
      * @return void
      */
-    function logout()
+    public function logout()
     {
         $this->_delete_autologin();
 
@@ -263,16 +257,15 @@ class Account_model extends CI_Model {
     {
         $this->load->helper('cookie');
 
-            if ($cookie = get_cookie($this->config->item('autologin_cookie_name'), TRUE))
-            {
-                //TODO: AUTOLOGIN
-                //$data = unserialize($cookie);
+        if ($cookie = get_cookie($this->config->item('autologin_cookie_name'), TRUE)) {
+            //TODO: AUTOLOGIN
+            //$data = unserialize($cookie);
 
-                //$this->ci->load->model('tank_auth/user_autologin');
-                //$this->ci->user_autologin->delete($data['user_id'], md5($data['key']));
+            //$this->ci->load->model('tank_auth/user_autologin');
+            //$this->ci->user_autologin->delete($data['user_id'], md5($data['key']));
 
-                //delete_cookie($this->ci->config->item('autologin_cookie_name', 'tank_auth'));
-            }
+            //delete_cookie($this->ci->config->item('autologin_cookie_name', 'tank_auth'));
+        }
     }
     /* }}} */
 
@@ -286,16 +279,16 @@ class Account_model extends CI_Model {
      * @access public
      * @return array
      */
-    function change_email($email)
+    public function change_email($email)
     {
         $user_id = $this->session->userdata('user_id');
 
         if (!is_null($user = $this->get_user_by_id($user_id, FALSE))) {
 
             $data = array(
-                            'user_id'  => $user_id,
-                            'username' => $user->username,
-                            'email'    => $email,
+                'user_id' => $user_id,
+                'username' => $user->username,
+                'email' => $email,
             );
 
             if (strtolower($user->email) == strtolower($email)) {        // leave activation key as is
@@ -303,7 +296,7 @@ class Account_model extends CI_Model {
                 return $data;
 
             } elseif ($this->is_email_available($email)) {
-                $data['new_email_key'] = md5(rand().microtime());
+                $data['new_email_key'] = md5(rand() . microtime());
                 $this->ci->users->set_new_email($user_id, $email, $data['new_email_key'], FALSE);
                 return $data;
 
@@ -325,7 +318,7 @@ class Account_model extends CI_Model {
      * @access public
      * @return object
      */
-    function get_user_by_id($user_id, $activated)
+    public function get_user_by_id($user_id, $activated)
     {
         $this->db->where('id', $user_id);
         $this->db->where('activated', $activated ? 1 : 0);
@@ -348,7 +341,7 @@ class Account_model extends CI_Model {
      * @access public
      * @return bool
      */
-    function set_new_email($user_id, $new_email, $new_email_key, $activated)
+    public function set_new_email($user_id, $new_email, $new_email_key, $activated)
     {
         $this->db->set($activated ? 'new_email' : 'email', $new_email);
         $this->db->set('new_email_key', $new_email_key);

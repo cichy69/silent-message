@@ -78,7 +78,7 @@ class CI_Lang {
 			return;
 		}
 
-		$config =& get_config();
+		$config = get_config();
 
 		if ($idiom == '')
 		{

@@ -278,7 +278,7 @@ class Dashboard extends MX_Controller
      * @access protected
      * @return void
      */
-    protected function _check_recipments()
+    public function _check_recipments()
     {
         $users = $this->input->post('to');
 
